@@ -7,7 +7,7 @@ const authenticateJWT = require('../middleware/authMiddleware'); // Add authenti
 // Route to get all tickets
 router.get('/', authenticateJWT, ticketController.getAllTickets);
 // Route to create a new ticket
-router.post('/', authenticateJWT, ticketController.createTicket);
+router.post('/', ticketController.createTicket);
 
 router.put('/:ticketId', authenticateJWT, ticketController.updateTicket);
 
