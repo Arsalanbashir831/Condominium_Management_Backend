@@ -2,21 +2,50 @@
 const Ticket = require("../models/Ticket");
 const User = require("../models/Users");
 const Technician = require("../models/Technician");
+const Condominium = require("../models/Condominium");
+const PrefCommunication = require("../models/PrefCommunication");
 
 const getAllTickets = async (req, res) => {
   try {
     const tickets = await Ticket.findAll({
       include: [
-        { model: User, as: "user" },
-        { model: Technician, as: "assigned_technicians" },
+        {
+          model: User,
+          as: 'user',
+          attributes:{exclude:['CondominiumId']},
+          include: [
+            {
+              model: Condominium,
+              as: 'condominium', 
+              attributes: ['name'], 
+            },
+          ],
+        },
+        {
+          model: Technician,
+          as: 'assigned_technicians',
+          attributes:{exclude:['PrefferedCommunication','CondominiumId']},
+          
+          include: [
+            {
+              model: Condominium,
+              as: 'condominiumTech', 
+              attributes: ['name'],
+            },
+            {
+              model: PrefCommunication,
+              as: 'prefCommunication', 
+              attributes: ['name'], 
+            },
+          ],
+        },
       ],
+      attributes: { exclude: ['TechnicianId','createdAt','userId'] },
     });
     res.json(tickets);
   } catch (error) {
-    console.error("Error retrieving tickets:", error);
-    res
-      .status(500)
-      .json({ message: "An error occurred while retrieving tickets." });
+    console.error('Error retrieving tickets:', error);
+    res.status(500).json({ message: 'An error occurred while retrieving tickets.' });
   }
 };
 

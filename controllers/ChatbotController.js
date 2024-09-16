@@ -79,7 +79,7 @@ const geminiChat = async (req, res) => {
 
         if (userConversation.hasAskedUrgency) {
             if (problemStatement.toLowerCase() === 'yes' || problemStatement.toLowerCase() === 'no') {
-                // Update urgency based on user response
+                
                 userConversation.isUrgent = problemStatement.toLowerCase() === 'yes';
                 
                 const technicianType = userConversation.technicianType;
@@ -123,7 +123,7 @@ const geminiChat = async (req, res) => {
             userConversation.hasAskedUrgency = true;
             return res.json({
                 response: 'We have all the information we need. Is this an urgent case? (Reply with "yes" or "no")',
-                hasNextQuestion: false,
+                hasNextQuestion: true,
                 tagline: userConversation.tagline,
                 isUrgent: userConversation.isUrgent
             });
