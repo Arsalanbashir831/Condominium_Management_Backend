@@ -6,6 +6,7 @@ const ticketRoutes = require('./routes/ticketRoutes');
 const technicianRoutes = require('./routes/technicianRoutes');
 const userRoutes = require('./routes/userRoutes')
 const chatbotRoutes = require('./routes/chatbotRoutes')
+const condominiumRoutes = require('./routes/condominiumRoutes')
 const cors = require('cors');
 
 
@@ -17,6 +18,7 @@ app.use('/api/ticket', ticketRoutes);
 app.use('/api/technician', technicianRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/aichat', chatbotRoutes);
+app.use('/api/condominium', condominiumRoutes);
 const initializeDatabase = async () => {
   await connectDb(); 
   await syncDb();    

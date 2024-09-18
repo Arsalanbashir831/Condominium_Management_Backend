@@ -1,25 +1,28 @@
 const { Sequelize, DataTypes } = require('sequelize');
 const sequelize = require('../utils/DBconnection').sequelize;
-const Condominium = require('./Condominium'); 
-const Technician = require('./Technician');
-const User = require('./Users');
 
 const Ticket = sequelize.define('Ticket', {
-   userId:{
-    type : DataTypes.INTEGER,
-    references:{
-        model:User,
-        key:'id',
-    }, allowNull:false
-   },
-    TechnicianId: {
-        type: DataTypes.INTEGER,
-        references: {
-            model: Technician, 
-            key: 'id', 
-        },
+    username: {
+        type: DataTypes.STRING,
+        allowNull: false,
+    },
+    user_condominium:{
+        type: DataTypes.STRING,
+        allowNull: false,
+    },
+    user_email: {
+        type: DataTypes.STRING, 
         allowNull: true,
     },
+    user_phone :{
+        type: DataTypes.STRING,
+        allowNull:true
+    },
+    technician_name:{
+        type : DataTypes.STRING, 
+        allowNull:true
+    },
+   
     isUrgent: {
         type: DataTypes.BOOLEAN,
         allowNull: false,
