@@ -21,13 +21,12 @@
 
 const express = require('express');
 const router = express.Router();
-const ticketController = require('../swager_controller/Ticket_Swagger'); // Adjust the path as necessary
+const ticketController = require('../controllers/TicketController'); // Adjust the path as necessary
 const authenticateJWT = require('../middleware/authMiddleware');
 router.get('/',  ticketController.getAllTickets);
 router.post('/', ticketController.createTicket);
-router.get('/:id', ticketController.getTicketById);
 router.put('/:id', ticketController.updateTicket);
 router.delete('/:id', ticketController.deleteTicket);
-router.patch('/:id/assign', ticketController.assignTechnician);
+router.post('/assign', ticketController.assignTechnicianToTicket);
 
 module.exports = router;

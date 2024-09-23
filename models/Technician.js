@@ -8,7 +8,7 @@ const Technician = sequelize.define('Technician', {
         type: DataTypes.STRING,
         unique: true,
         allowNull: false,
-    },
+    },  
     CompanyName: {
         type: DataTypes.STRING,
         allowNull: false,

@@ -4,9 +4,9 @@ const userController = require('../controllers/UserController');
 const { fetchUsers } = require('../swager_controller/User_Swagger');
 
 // Route to get user by email
-// router.get('/:email', userController.getUserByEmail);
+router.get('/:query', userController.getUserByContact);
 router.post('/', userController.addUser);
-router.get('/swagger', fetchUsers);
+// router.get('/swagger', fetchUsers);
 
 
 module.exports = router;

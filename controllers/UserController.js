@@ -1,15 +1,20 @@
 const Condominium = require('../models/Condominium');
 const User = require('../models/Users'); 
+const { Op } = require('sequelize');
 
-const getUserByEmail = async (req, res) => {
-    const { email } = req.params;
-    
+const getUserByContact = async (req, res) => {
+    const { query } = req.params; 
     try {
         const user = await User.findOne({
-            where: { email },
-            include: { model: Condominium, as: 'condominium' } ,
+            where: {
+                [Op.or]: [
+                    { email: query },
+                    { contactNumber: query } 
+                ]
+            },
+            include: { model: Condominium, as: 'condominium' },
             attributes: { exclude: ['CondominiumId'] }
-        });;
+        });
         
         if (!user) {
             return res.status(404).json({ message: 'User not found.' });
@@ -17,10 +22,11 @@ const getUserByEmail = async (req, res) => {
         
         res.json(user);
     } catch (error) {
-        console.error('Error fetching user by email:', error);
+        console.error('Error fetching user by contact:', error);
         res.status(500).json({ error: 'An error occurred while fetching the user.' });
     }
 };
+
     
 
 const addUser = async (req, res) => {
@@ -55,6 +61,6 @@ const addUser = async (req, res) => {
 
 
 module.exports = {
-    getUserByEmail,
+    getUserByContact,
     addUser
 };
