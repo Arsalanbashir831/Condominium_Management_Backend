@@ -88,7 +88,7 @@ const generateTagline = async (problemStatement) => {
 };
 
 const generateInitialResponse = async (problemStatement, technicianType, tagline) => {
-    const prompt = `You are the customer care assistant of a condominium manager. The problem statement is: "${problemStatement}". Now ask a follow-up question to understand their problem in detail. Limit to 1 question, relevant, and simple for a 70-year-old to understand.`;
+    const prompt = `You are the customer care assistant of a condominium manager. The problem statement is: "${problemStatement}". Now ask a follow-up question to understand their problem in detail. Limit to 1 question, relevant, and simple for a 70-year-old to understand.The Question should be relevant dont ask dumb and useless question make it relevant and helpful for assistant question`;
 
     try {
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);

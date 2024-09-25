@@ -214,7 +214,7 @@ const getAllTickets = async (req, res) => {
         {
           model: Status,
           as: "status",
-          attributes: ["name"],
+          attributes: ["name","id"],
         },
         {
           model: Technician,
@@ -541,32 +541,32 @@ const getTicketsAndSendEmail = async (req, res) => {
         isArchieve: false, 
         IsPermitToAutoMail: true, 
         //  createdAt: { [Op.lt]: oneDayAgo } ,
-        followUpCount:1
+        followUpCount:0
       },
-      // include: [
-      //   {
-      //     model: User,
-      //     as: 'user',
-      //     attributes: ["name", "email", "contactNumber", "apartment"],
-      //     include: [
-      //       {
-      //         model: Condominium,
-      //         as: "condominium",
-      //         attributes: ["name"],
-      //       },
-      //     ],
-      //   },
-      //   {
-      //     model: Technician,
-      //     as: "assigned_technicians",
-      //     attributes: ["CompanyName", "SectorName"],
-      //   },
-      //   {
-      //     model: Status,
-      //     as: "status",
-      //     attributes: ["id", "name"],
-      //   },
-      // ],
+      include: [
+        {
+          model: User,
+          as: 'user',
+          attributes: ["name", "email", "contactNumber", "apartment"],
+          include: [
+            {
+              model: Condominium,
+              as: "condominium",
+              attributes: ["name"],
+            },
+          ],
+        },
+        {
+          model: Technician,
+          as: "assigned_technicians",
+          attributes: ["CompanyName", "SectorName","email"],
+        },
+        {
+          model: Status,
+          as: "status",
+          attributes: ["id", "name"],
+        },
+      ],
     });
 
     if (!tickets.length) {
@@ -584,23 +584,36 @@ const getTicketsAndSendEmail = async (req, res) => {
       await ticket.save(); // Save the ticket with updated follow-up count
 
       const user = ticket.user;
-      const technician = ticket.assigned_technicians;
+      const technician = ticket.assigned_technicians.dataValues;
+console.log(technician);
 
       const mailOptions = {
         from: process.env.GMAIL_APP_NAME,
-        to: 'abc@gmail.com', // Use user's email
+        to: technician.email, // Use user's email
         subject:
-          "Follow-Up Required: Assistance Needed at Condominium " +
-          user.condominium.name,
+          "Follow-Up Required: Assistance Needed at Condominium " ,
         html: `
-          <h1>Follow up mail</h1>
-        
-          <p>Best regards,<br>Condominium Manager</p>
+          <h1>Urgent Follow-Up: Action Required</h1>
+    <p>Dear ${technician.CompanyName},</p>
+    
+    <p>We hope this message finds you well. This is a follow-up regarding the pending issue at <strong>Condominium ${user.condominium.name}</strong> that requires your immediate attention.</p>
+
+    <p><strong>Problem Statement:</strong> ${ticket.problemStatement}</p>
+    <p><strong>User name</strong> ${user.name}</p>
+    
+    <p>Our records indicate that the status of the request is still pending. We kindly request you to visit the site and address the issue at your earliest convenience.</p>
+    
+    <p>If you require any further information or encounter any challenges, please do not hesitate to contact us. We appreciate your prompt attention to this matter.</p>
+
+    <p>Thank you for your dedication and hard work in keeping the condominium in top shape.</p>
+    
+    <p>Best regards,<br>Condominium Management Team</p>
         `,
       };
 
       // Send the email
-      await transporter.sendMail(mailOptions);
+      await transporter.sendMail(mailOptions)
+   
     });
 
     await Promise.all(emailPromises);
@@ -635,6 +648,7 @@ const getTicketsAndNotifyAdmin = async (req, res) => {
         statusId: 1, 
         isArchieve: false, 
         IsPermitToAutoMail: true, 
+        followUpCount:1
       },
       include: [
         {
@@ -671,8 +685,7 @@ console.log(tickets);
 
     // Loop through tickets to check follow-up count
     for (const ticket of tickets) {
-      if (ticket.followUpCount > 1 && ticket.statusId === 1) {
-        // Update ticket status to 3
+ 
         await Ticket.update(
           { statusId: 3 }, // Set status to 3
           { where: { id: ticket.id } }
@@ -681,7 +694,7 @@ console.log(tickets);
         const adminMailOptions = {
           from: process.env.GMAIL_APP_NAME,
           to: process.env.ADMIN_EMAIL,
-          subject: "Follow-Up Required: Technician Did Not Reply",
+          subject: "Pending Status : Technician Did Not Reply",
           html: `
             <p>Dear Admin,</p>
             <p>Ticket ID <strong>${ticket.dataValues.id}</strong> has received more than one follow-up, and the technician has not replied.</p>
@@ -704,7 +717,7 @@ console.log(tickets);
         // Send email to admin
         await transporter.sendMail(adminMailOptions).then(()=>{console.log('notification send to admin')});
       }
-    }
+    
 
     return res.status(200).json({
       message:
