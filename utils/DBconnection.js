@@ -37,12 +37,12 @@ const syncDb = async () => {
     const Status = require('../models/Status');
 
     await sequelize.sync({ alter: true }); 
-    await Status.ensureDefaults();
-    await PrefCommunication.ensureDefaults();
-    await Condominium.ensureDefaults()
-     await Admin.ensureDefaults()
-     await Technician.ensureDefaults()
-     await Users.ensureDefaults()
+    // await Status.ensureDefaults();
+    // await PrefCommunication.ensureDefaults();
+    // await Condominium.ensureDefaults()
+    //  await Admin.ensureDefaults()
+    //  await Technician.ensureDefaults()
+    //  await Users.ensureDefaults()
     console.log('Database synchronized and default statuses ensured.');
   } catch (error) {
     console.error('Failed to synchronize database or ensure defaults:', error);
