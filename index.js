@@ -8,6 +8,7 @@ const userRoutes = require('./routes/userRoutes')
 const chatbotRoutes = require('./routes/chatbotRoutes')
 const condominiumRoutes = require('./routes/condominiumRoutes')
 const cors = require('cors');
+const { getTicketsAndNotifyAdmin, getTicketsAndSendEmail } = require('./controllers/TicketController');
 
 
 const app = express();
@@ -25,8 +26,42 @@ const initializeDatabase = async () => {
 };
 initializeDatabase();
 
+const checkTicketsAndNotifyAdmin = async () => {
+  try {
+    console.log('mail function called')
+      // Simulate a request and response
+      const req = {}; // Mock request object
+      const res = {
+          status: (code) => ({
+              json: (data) => console.log(`Response: ${code}`, data),
+          }),
+      };
+
+      await getTicketsAndNotifyAdmin(req, res);
+  } catch (error) {
+      console.error('Error calling getTicketsAndNotifyAdmin:', error);
+  }
+};
+
+const followUpMailToTechnicians = async () => {
+  try {
+      // Simulate a request and response
+      const req = {}; // Mock request object
+      const res = {
+          status: (code) => ({
+              json: (data) => console.log(`Response: ${code}`, data),
+          }),
+      };
+
+      await getTicketsAndSendEmail(req, res);
+  } catch (error) {
+      console.error('Error calling Follow up Email:', error);
+  }
+};
 
 
+setInterval(checkTicketsAndNotifyAdmin, 600000);
+setInterval(followUpMailToTechnicians, 600000);
 
 const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => {

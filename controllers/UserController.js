@@ -1,6 +1,8 @@
 const Condominium = require('../models/Condominium');
 const User = require('../models/Users'); 
 const { Op } = require('sequelize');
+const { ValidationError } = require('sequelize'); 
+
 
 const getUserByContact = async (req, res) => {
     const { query } = req.params; 
@@ -59,8 +61,63 @@ const addUser = async (req, res) => {
     }
 };
 
+const fetchAllUsers = async (req, res) => {
+    try {
+        const users = await User.findAll({
+            include: { model: Condominium, as: 'condominium' },
+            attributes: { exclude: ['CondominiumId'] }
+        });
+
+        if (!users.length) {
+            return res.status(404).json({ message: 'No users found.' });
+        }
+
+        res.json(users);
+    } catch (error) {
+        console.error('Error fetching all users:', error);
+        res.status(500).json({ error: 'An error occurred while fetching users.' });
+    }
+};
+
+
+
+const editUser = async (req, res) => {
+    const { userId } = req.params; // Assuming you're passing user ID as a URL parameter
+    const { email, name, surname, apartment, CondominiumId, contactNumber } = req.body;
+
+    try {
+        // Find the user by ID
+        const user = await User.findByPk(userId);
+        
+        if (!user) {
+            return res.status(404).json({ message: 'User not found.' });
+        }
+
+        // Create an object to hold the updated fields
+        const updatedFields = {};
+
+        // Check which fields are provided and add them to the updatedFields object
+        if (email) updatedFields.email = email;
+        if (name) updatedFields.name = name;
+        if (surname) updatedFields.surname = surname;
+        if (apartment) updatedFields.apartment = apartment;
+        if (CondominiumId) updatedFields.CondominiumId = CondominiumId;
+        if (contactNumber) updatedFields.contactNumber = contactNumber;
+
+        await user.update(updatedFields);
+
+        res.json({ message: 'User updated successfully.', user });
+    } catch (error) {
+        if (error instanceof ValidationError) {
+            res.status(400).json({ message: 'Validation error.', errors: error.errors });
+        } else {
+            console.error('Error updating user:', error);
+            res.status(500).json({ message: 'An error occurred while updating the user.' });
+        }
+    }
+};
 
 module.exports = {
     getUserByContact,
-    addUser
+    addUser , fetchAllUsers , editUser
 };

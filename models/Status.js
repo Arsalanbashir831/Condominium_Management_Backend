@@ -1,7 +1,8 @@
+
 const { Sequelize, DataTypes } = require('sequelize');
 const sequelize = require('../utils/DBconnection').sequelize;
 
-const PrefCommunication = sequelize.define('PrefCommunication', {
+const Status = sequelize.define('Status', {
     id: {
         type: DataTypes.INTEGER,
         autoIncrement: true,
@@ -15,19 +16,19 @@ const PrefCommunication = sequelize.define('PrefCommunication', {
 }, {
     timestamps: false,
 });
-
-PrefCommunication.ensureDefaults = async () => {
+Status.ensureDefaults = async () => {
+ 
     const defaults = [
-        { id: 1, name: 'Email' },
-        { id: 2, name: 'Telephone' },
+      { id: 1, name: 'pending' },
+      { id: 2, name: 'accepted' },
+      { id: 3, name: 'rejected' },
     ];
-
-    for (const pref of defaults) {
-        await PrefCommunication.findOrCreate({
-            where: { id: pref.id },
-            defaults: pref,
-        });
+  
+    for (const status of defaults) {
+      await Status.findOrCreate({
+        where: { id: status.id },
+        defaults: status,
+      });
     }
-};
-
-module.exports = PrefCommunication;
+  };
+module.exports = Status;

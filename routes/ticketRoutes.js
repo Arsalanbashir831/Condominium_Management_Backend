@@ -25,8 +25,9 @@ const ticketController = require('../controllers/TicketController'); // Adjust t
 const authenticateJWT = require('../middleware/authMiddleware');
 router.get('/',  ticketController.getAllTickets);
 router.post('/', ticketController.createTicket);
-router.put('/:id', ticketController.updateTicket);
+router.put('/:ticketId', ticketController.updateTicket);
 router.delete('/:id', ticketController.deleteTicket);
 router.post('/assign', ticketController.assignTechnicianToTicket);
+router.put('/:ticketId/status', ticketController.updateTicketStatus);
 
 module.exports = router;

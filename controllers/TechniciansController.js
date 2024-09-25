@@ -66,7 +66,49 @@ const getAllTechnicians = async (req, res) => {
     }
 };
 
+
+const getTechnicianById = async (req, res) => {
+    const { technicianId } = req.params; // Extracting the technicianId from route parameters
+
+    // Check if technicianId is provided
+    if (!technicianId) {
+        return res.status(400).json({ message: 'TechnicianId parameter is required.' });
+    }
+
+    try {
+        // Find the technician by their ID
+        const technician = await Technician.findOne({
+            where: { id: technicianId },
+            include: [
+                {
+                    model: Condominium,
+                    as: 'condominiumTech', 
+                    attributes: ['id', 'name']
+                },
+                {
+                    model: PrefCommunication,
+                    as: 'prefCommunication',
+                    attributes: ['id', 'name']
+                }
+            ]
+        });
+
+        // If no technician is found, return a 404 status with a descriptive message
+        if (!technician) {
+            return res.status(404).json({ message: `No technician found with ID: ${technicianId}.` });
+        }
+
+        // Return the technician's details
+        return res.status(200).json(technician);
+    } catch (error) {
+        console.error('Error fetching technician by technicianId:', error);
+        // Return a 500 status in case of an internal server error
+        return res.status(500).json({ error: 'An error occurred while fetching the technician.' });
+    }
+};
+
 module.exports = {
     getTechniciansByCondominiumId,
-    getAllTechnicians
+    getAllTechnicians,
+    getTechnicianById
 };

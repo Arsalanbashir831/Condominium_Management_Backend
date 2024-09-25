@@ -1,6 +1,7 @@
 const { Sequelize, DataTypes } = require('sequelize');
 const User = require('./Users');
 const Technician = require('./Technician');
+const Status = require('./Status');
 const sequelize = require('../utils/DBconnection').sequelize;
 
 const Ticket = sequelize.define('Ticket', {
@@ -46,6 +47,30 @@ const Ticket = sequelize.define('Ticket', {
         type: DataTypes.STRING,
         allowNull: false,
     },
+    statusId:{
+        type:DataTypes.INTEGER,
+        references:{
+            model:Status,
+            key:'id'
+        }, allowNull:true
+       },
+       followUpCount:{
+        type:DataTypes.INTEGER,
+         allowNull:false,
+        defaultValue:0
+       },
+       IsPermitToAutoMail:{
+        type:DataTypes.BOOLEAN,
+        defaultValue:false, allowNull:true
+       },
+       isArchieve:{
+        type:DataTypes.BOOLEAN,
+        defaultValue:false , allowNull:true
+       },
+       description:{
+        type:DataTypes.TEXT,
+        allowNull:true, defaultValue:''
+       },
     createdAt: {
         type: DataTypes.DATE,
         defaultValue: Sequelize.NOW,

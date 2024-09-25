@@ -113,7 +113,7 @@ const translateToItalian = async (text) => {
 
 const geminiChat = async (req, res) => {
     try {
-        const { userId, problemStatement } = req.body;
+        const { userId, problemStatement,username } = req.body;
 
         if (!userId || !problemStatement) {
             return res.status(400).json({ message: 'UserId and problemStatement are required.' });
@@ -166,7 +166,7 @@ const geminiChat = async (req, res) => {
             });
         }
 
-        const finalResponse = `We have all the information we need. The priority level is: "${userConversation.priority}". We will inform the ${userConversation.technicianType}.`;
+        const finalResponse = `Perfect, okay, I understand ${username} the ${userConversation.technicianType} will come as soon as possible. `;
 
         // Translate the final response to Italian
         const translatedFinalResponse = await translateToItalian(finalResponse);

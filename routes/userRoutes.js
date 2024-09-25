@@ -6,7 +6,9 @@ const { fetchUsers } = require('../swager_controller/User_Swagger');
 // Route to get user by email
 router.get('/:query', userController.getUserByContact);
 router.post('/', userController.addUser);
-// router.get('/swagger', fetchUsers);
+router.get('/', userController.fetchAllUsers);
+router.put('/:userId', userController.editUser); // PUT request to edit user details
+
 
 
 module.exports = router;
