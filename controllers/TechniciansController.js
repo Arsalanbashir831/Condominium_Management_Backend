@@ -107,8 +107,47 @@ const getTechnicianById = async (req, res) => {
     }
 };
 
+
+const updateTechnician = async (req, res) => {
+    const { technicianId } = req.params;
+    const { name, email, phone, condominiumId, prefCommunicationId } = req.body;
+
+    // Check if technicianId is provided
+    if (!technicianId) {
+        return res.status(400).json({ message: 'TechnicianId parameter is required.' });
+    }
+
+    try {
+        // Find the technician by their ID
+        const technician = await Technician.findOne({
+            where: { id: technicianId }
+        });
+
+        // If no technician is found, return a 404 status with a descriptive message
+        if (!technician) {
+            return res.status(404).json({ message: `No technician found with ID: ${technicianId}.` });
+        }
+
+        // Update the technician's details
+        await technician.update({
+            name,
+            email,
+            phone,
+            CondominiumId: condominiumId,
+            PrefCommunicationId: prefCommunicationId
+        });
+
+        // Return a success message
+        return res.status(200).json({ message: 'Technician updated successfully.' });
+    } catch (error) {
+        console.error('Error updating technician:', error);
+        // Return a 500 status in case of an internal server error
+        return res.status(500).json({ error: 'An error occurred while updating the technician.' });
+    }
+};
 module.exports = {
     getTechniciansByCondominiumId,
     getAllTechnicians,
-    getTechnicianById
+    getTechnicianById, updateTechnician
+
 };
