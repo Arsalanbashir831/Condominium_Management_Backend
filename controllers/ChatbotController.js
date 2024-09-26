@@ -88,7 +88,7 @@ const generateTagline = async (problemStatement) => {
 };
 
 const generateInitialResponse = async (problemStatement, technicianType, tagline) => {
-    const prompt = `You are the customer care assistant of a condominium manager. The problem statement is: "${problemStatement}". Now ask a follow-up question to understand their problem in detail. Limit to 1 question, relevant, and simple for a 70-year-old to understand.The Question should be relevant dont ask dumb and useless question make it relevant and helpful for assistant question`;
+    const prompt = `You are the customer care assistant of a condominium manager. The problem statement is: "${problemStatement}".Now ask a relevant helping question for technician which actually help them. Limit to 1 question, relevant, and simple for a 70-year-old to understand.The Question should be relevant dont ask dumb and useless question make it relevant and helpful for assistant question`;
 
     try {
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
@@ -148,7 +148,7 @@ const geminiChat = async (req, res) => {
         const hasNextQuestion = userConversation.questionsAsked < MAX_QUESTIONS;
 
         if (hasNextQuestion) {
-            const prompt = `The user has described the following problem: "${problemStatement}". Based on this problem, generate a follow-up question to gather more details and better understand the issue.`;
+            const prompt = `The user has described the following problem: "${problemStatement}". Based on this problem, generate a relevant question not a useless question which actually helps the technician to solve the problem make it a 1 question only but usefull dont ask useless question like you are condominium assistant manager`;
             const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
             const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
             const result = await model.generateContent(prompt);
@@ -166,13 +166,13 @@ const geminiChat = async (req, res) => {
             });
         }
 
-        const finalResponse = `Perfect, okay, I understand ${username} the ${userConversation.technicianType} will come as soon as possible. `;
+        const finalResponse = `ok ${username}, grazie per la tua segnalazione. Abbiamo già avvisato il ${userConversation.technicianType} e arriverà il prima possibile. `;
 
         // Translate the final response to Italian
-        const translatedFinalResponse = await translateToItalian(finalResponse);
+        // const translatedFinalResponse = await translateToItalian(finalResponse);
 
         return res.json({
-            response: translatedFinalResponse,
+            response: finalResponse,
             hasNextQuestion: false,
             tagline: userConversation.tagline,
             priority: userConversation.priority

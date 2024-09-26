@@ -207,7 +207,7 @@ const getAllTickets = async (req, res) => {
             {
               model: Condominium,
               as: "condominium",
-              attributes: ["name"],
+              attributes: ["name","id"],
             },
           ],
         },
@@ -224,7 +224,7 @@ const getAllTickets = async (req, res) => {
             {
               model: Condominium,
               as: "condominiumTech",
-              attributes: ["name"],
+              attributes: ["name","id"],
             },
             {
               model: PrefCommunication,
