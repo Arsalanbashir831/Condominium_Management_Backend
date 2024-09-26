@@ -10,7 +10,7 @@ const classifyProblem = async (problemStatement) => {
   const prompt = `Classifica la seguente descrizione del problema in una di queste categorie: idraulico, elettricista o tecnico. Descrizione del problema: "${problemStatement}". Menziona solo il nome della categoria, senza bisogno di giustificazione.`;
   try {
     const response = await client.chat.completions.create({
-      model: "gpt-4", // You can use gpt-4 or gpt-3.5-turbo depending on your setup
+      model: "gpt-3.5-turbo-instruct", // You can use gpt-4 or gpt-3.5-turbo depending on your setup
       messages: [{ role: "user", content: prompt }],
     });
     return response.choices[0].message.content.trim().toLowerCase();
@@ -69,7 +69,7 @@ Non-Urgent Requests:
 
   try {
     const response = await client.chat.completions.create({
-      model: "gpt-4", // You can use gpt-4 or gpt-3.5-turbo depending on your setup
+      model: "gpt-3.5-turbo-instruct", // You can use gpt-4 or gpt-3.5-turbo depending on your setup
       messages: [{ role: "user", content: prompt }],
     });
     return response.choices[0].message.content.trim().toLowerCase();
@@ -85,7 +85,7 @@ const generateTagline = async (problemStatement) => {
 
   try {
     const response = await client.chat.completions.create({
-      model: "gpt-4",
+      model: "gpt-3.5-turbo-instruct",
       messages: [{ role: "user", content: prompt }],
     });
     return response.choices[0].message.content.trim().toLowerCase();
@@ -165,7 +165,7 @@ make it a 1 line question based on the situation in italian
 
   try {
     const response = await client.chat.completions.create({
-      model: "gpt-4", // You can use gpt-4 or gpt-3.5-turbo depending on your setup
+      model: "gpt-3.5-turbo-instruct", // You can use gpt-4 or gpt-3.5-turbo depending on your setup
       messages: [{ role: "system", content: prompt }],
     });
     return response.choices[0].message.content.trim().toLowerCase();
@@ -222,7 +222,7 @@ console.log('input' , userInput);
 
     if (isAppreciation) {
       const response = await client.chat.completions.create({
-        model: "gpt-4",
+        model: "gpt-3.5-turbo-instruct",
         messages: [
           {
             role: "assistant",
@@ -297,7 +297,7 @@ const geminiChat = async (req, res) => {
       const prompt = `The user has described the following problem: "${problemStatement}". Based on this problem, generate a relevant question that helps the technician. Limit it to 1 question.only return the italian language`;
 
       const response = await client.chat.completions.create({
-        model: "gpt-4", // You can use gpt-4 or gpt-3.5-turbo depending on your setup
+        model: "gpt-gpt-3.5-turbo-instruct", // You can use gpt-4 or gpt-3.5-turbo depending on your setup
         messages: [{ role: "user", content: prompt }],
       });
 
