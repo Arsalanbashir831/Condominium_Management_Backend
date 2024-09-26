@@ -1,19 +1,22 @@
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+const {OpenAI} =require('openai')
 const translate = require('translate-google'); // Import translate-google
 const MAX_QUESTIONS = 1;
 const userConversations = {};
+const client= new OpenAI({
+    apiKey : process.env.OPENAI_API
+})
 
 const classifyProblem = async (problemStatement) => {
     const prompt = `Classify the following problem statement into one of these categories: plumber, electrician, or technician. Problem statement: "${problemStatement}". Just mention the category name, no need for justification.`;
-
     try {
-        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-        const result = await model.generateContent(prompt);
-        return result.response.text().trim().toLowerCase();
+        const response = await client.chat.completions.create({
+            model: 'gpt-4', // You can use gpt-4 or gpt-3.5-turbo depending on your setup
+            messages: [{ role: "user", content: prompt }],
+        });
+        return response.choices[0].message.content.trim().toLowerCase();
     } catch (error) {
         console.error('Error classifying problem:', error);
-        return 'technician'; 
+        return 'technician';
     }
 };
 
@@ -21,7 +24,8 @@ const classifyPriority = async (problemStatement) => {
     const prompt = `
         Based on the following problem statement, classify it into one of these categories: urgent, fairly urgent, non-urgent.
         Problem statement: "${problemStatement}".
-      Urgent Requests:
+        and on the creteria to decide on which you have to train and give result
+         Urgent Requests:
 
 1. Major water leak in my apartment damaging the ceiling.
 2. ⁠Elevator stuck with people inside.
@@ -60,16 +64,19 @@ Non-Urgent Requests:
 10. ⁠Request to replace a light bulb in one of the parking lights.
         
         Just return the urgency level (urgent, fairly urgent, or non-urgent).
+        dont give me explaination just say urgent , not urgent and fairly urgent thats it
     `;
 
     try {
-        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-        const result = await model.generateContent(prompt);
-        return result.response.text().trim().toLowerCase();
+        const response = await client.chat.completions.create({
+            model: 'gpt-4', // You can use gpt-4 or gpt-3.5-turbo depending on your setup
+            messages: [{ role: "user", content: prompt }],
+        });
+        return response.choices[0].message.content.trim().toLowerCase();
+
     } catch (error) {
         console.error('Error classifying priority:', error);
-        return 'non-urgent'; 
+        return 'non-urgent';
     }
 };
 
@@ -77,10 +84,12 @@ const generateTagline = async (problemStatement) => {
     const prompt = `Create me a line statement for the following problem statement: "${problemStatement}". Make it super simplified in 1 line without any text decoration or new lines.`;
 
     try {
-        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-        const result = await model.generateContent(prompt);
-        return result.response.text().trim();
+        const response = await client.chat.completions.create({
+            model: 'gpt-4', // You can use gpt-4 or gpt-3.5-turbo depending on your setup
+            messages: [{ role: "user", content: prompt }],
+        });
+        return response.choices[0].message.content.trim().toLowerCase();
+      
     } catch (error) {
         console.error('Error generating tagline:', error);
         return 'No tagline available.';
@@ -88,13 +97,14 @@ const generateTagline = async (problemStatement) => {
 };
 
 const generateInitialResponse = async (problemStatement, technicianType, tagline) => {
-    const prompt = `You are the customer care assistant of a condominium manager. The problem statement is: "${problemStatement}".Now ask a relevant helping question for technician which actually help them. Limit to 1 question, relevant, and simple for a 70-year-old to understand.The Question should be relevant dont ask dumb and useless question make it relevant and helpful for assistant question`;
+    const prompt = `You are the customer care assistant of a condominium manager. The problem statement is: "${problemStatement}". Now ask a relevant helping question for a technician which actually helps them. Limit it to 1 question, relevant, and simple for a 70-year-old to understand.`;
 
     try {
-        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-        const result = await model.generateContent(prompt);
-        return result.response.text().trim();
+        const response = await client.chat.completions.create({
+            model: 'gpt-4', // You can use gpt-4 or gpt-3.5-turbo depending on your setup
+            messages: [{ role: "user", content: prompt }],
+        });
+        return response.choices[0].message.content.trim().toLowerCase();
     } catch (error) {
         console.error('Error generating initial response:', error);
         return `Thank you for reporting. We will inform the ${technicianType} based on the problem. Here's a tagline for your issue: "${tagline}".`;
@@ -113,7 +123,7 @@ const translateToItalian = async (text) => {
 
 const geminiChat = async (req, res) => {
     try {
-        const { userId, problemStatement,username } = req.body;
+        const { userId, problemStatement, username } = req.body;
 
         if (!userId || !problemStatement) {
             return res.status(400).json({ message: 'UserId and problemStatement are required.' });
@@ -148,15 +158,18 @@ const geminiChat = async (req, res) => {
         const hasNextQuestion = userConversation.questionsAsked < MAX_QUESTIONS;
 
         if (hasNextQuestion) {
-            const prompt = `The user has described the following problem: "${problemStatement}". Based on this problem, generate a relevant question not a useless question which actually helps the technician to solve the problem make it a 1 question only but usefull dont ask useless question like you are condominium assistant manager`;
-            const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-            const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-            const result = await model.generateContent(prompt);
+            const prompt = `The user has described the following problem: "${problemStatement}". Based on this problem, generate a relevant question that helps the technician. Limit it to 1 question.`;
+
+            const response = await client.chat.completions.create({
+                model: 'gpt-4', // You can use gpt-4 or gpt-3.5-turbo depending on your setup
+                messages: [{ role: "user", content: prompt }],
+            });
+            
 
             userConversation.questionsAsked += 1;
-
+            
             // Translate the follow-up question to Italian
-            const translatedResponse = await translateToItalian(result.response.text());
+            const translatedResponse = await translateToItalian(response.choices[0].message.content.trim().toLowerCase());
 
             return res.json({
                 response: translatedResponse,
@@ -166,11 +179,9 @@ const geminiChat = async (req, res) => {
             });
         }
 
-        const finalResponse = `ok ${username}, grazie per la tua segnalazione. Abbiamo già avvisato il ${userConversation.technicianType} e arriverà il prima possibile. `;
+        const finalResponse = `ok ${username}, grazie per la tua segnalazione. Abbiamo già avvisato il ${userConversation.technicianType} e arriverà il prima possibile.`;
 
-        // Translate the final response to Italian
-        // const translatedFinalResponse = await translateToItalian(finalResponse);
-
+        delete userConversations[userId];
         return res.json({
             response: finalResponse,
             hasNextQuestion: false,

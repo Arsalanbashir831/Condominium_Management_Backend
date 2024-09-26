@@ -685,11 +685,6 @@ console.log(tickets);
 
     // Loop through tickets to check follow-up count
     for (const ticket of tickets) {
- 
-        await Ticket.update(
-          { statusId: 3 }, // Set status to 3
-          { where: { id: ticket.id } }
-        );
 
         const adminMailOptions = {
           from: process.env.GMAIL_APP_NAME,
