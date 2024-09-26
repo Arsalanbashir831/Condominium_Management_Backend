@@ -7,7 +7,7 @@ const client = new OpenAI({
 });
 
 const classifyProblem = async (problemStatement) => {
-  const prompt = `Classify the following problem statement into one of these categories: plumber, electrician, or technician. Problem statement: "${problemStatement}". Just mention the category name, no need for justification.`;
+  const prompt = `Classifica la seguente descrizione del problema in una di queste categorie: idraulico, elettricista o tecnico. Descrizione del problema: "${problemStatement}". Menziona solo il nome della categoria, senza bisogno di giustificazione.`;
   try {
     const response = await client.chat.completions.create({
       model: "gpt-4", // You can use gpt-4 or gpt-3.5-turbo depending on your setup
@@ -80,7 +80,8 @@ Non-Urgent Requests:
 };
 
 const generateTagline = async (problemStatement) => {
-  const prompt = `Create me a line statement for the following problem statement: "${problemStatement}". Make it super simplified in 1 line without any text decoration or new lines. and translate it into italian`;
+  const prompt = `Creami una dichiarazione in una riga per il seguente problema: "${problemStatement}". Rendilo super semplificato in una sola riga senza alcuna decorazione di testo o nuove righe. Traducilo in italiano e fornisci solo uno slogan senza dare dettagli, rendilo pertinente e diretto al punto.`;
+
 
   try {
     const response = await client.chat.completions.create({
@@ -99,10 +100,7 @@ const generateInitialResponse = async (
   technicianType,
   tagline
 ) => {
-  const prompt = `Sure! Here’s a simplified version of your prompt:
-
----
-
+  const prompt = `
 Sei l'assistente del servizio clienti di un gestore di condominio. Aiuta il cliente a identificare il ${problemStatement} nel loro condominio o appartamento. Fai una sola domanda in italiano, simile agli esempi seguenti:
 ### *1. Tubo rotto in area comune*
 1. “Puoi dirmi esattamente dove si trova la perdita? È vicino a un’area specifica del giardino?”
@@ -168,7 +166,7 @@ make it a 1 line question based on the situation in italian
   try {
     const response = await client.chat.completions.create({
       model: "gpt-4", // You can use gpt-4 or gpt-3.5-turbo depending on your setup
-      messages: [{ role: "user", content: prompt }],
+      messages: [{ role: "system", content: prompt }],
     });
     return response.choices[0].message.content.trim().toLowerCase();
   } catch (error) {
@@ -177,15 +175,81 @@ make it a 1 line question based on the situation in italian
   }
 };
 
-const translateToItalian = async (text) => {
+// const translateToItalian = async (text) => {
+//   try {
+//     const translatedText = await translate(text, { to: "it" });
+//     return translatedText;
+//   } catch (error) {
+//     console.error("Error translating to Italian:", error);
+//     return text;
+//   }
+// };
+
+
+const simpleSupportChat = async (req, res) => {
+  const { userInput } = req.body; 
+console.log('input' , userInput);
+
   try {
-    const translatedText = await translate(text, { to: "it" });
-    return translatedText;
+    // Convert the user input to lowercase for case-insensitive matching
+    const lowerInput = userInput.toLowerCase();
+    
+    // Define keywords indicating appreciation
+    const appreciationKeywords = [
+      "thanks",
+      "thank you",
+      "thank",
+      "grazie",
+      "appreciate",
+      "apprezzo",
+      "thanks a lot",
+      "much appreciated",
+      "thank you very much",
+      // Additional Italian keywords
+      "mille grazie", // a thousand thanks
+      "ti ringrazio", // I thank you
+      "grazie mille", // thank you very much
+      "ringrazio", // I thank (formal)
+      "sono grato", // I am grateful
+      "sono riconoscente", // I am thankful
+      "grazie tante", // many thanks
+      "grazie per tutto" // thank you for everything
+  ];
+  
+    
+    // Check if the user input contains any appreciation keywords
+    const isAppreciation = appreciationKeywords.some(keyword => lowerInput.includes(keyword));
+
+    if (isAppreciation) {
+      const response = await client.chat.completions.create({
+        model: "gpt-4",
+        messages: [
+          {
+            role: "assistant",
+            content: `You have to understand user response and you already helped them. Now user is happy and saying: ${userInput}. Handle the user response in your way in 1 line like if user says: ${userInput}, then say "We are always here for you. It's my pleasure." So accept it like you are most welcome, we are always here to assist you.`
+          }
+        ],
+      });
+
+      // Get the response content
+      const chatResponse = response.choices[0].message.content.trim();
+
+      // Send the response back to the user
+      res.status(200).json({ response: chatResponse, isProblem: false});
+    } else{
+
+      res.status(200).json({ response: "We are understanding your problem please wait", isProblem: true });
+    }
   } catch (error) {
-    console.error("Error translating to Italian:", error);
-    return text;
+    console.error("Error generating chatbot response:", error);
+
+    // Fallback response in case of an error
+    res.status(500).json({
+      message: "We apologize for the inconvenience. An error occurred while processing your request. Please try again later or contact our support team.",
+    });
   }
 };
+
 
 const geminiChat = async (req, res) => {
   try {
@@ -207,7 +271,7 @@ const geminiChat = async (req, res) => {
         tagline
       );
 
-      const translatedResponse = await translateToItalian(initialResponse);
+      // const translatedResponse = await translateToItalian(initialResponse);
 
       userConversations[userId] = {
         problemStatement,
@@ -230,7 +294,7 @@ const geminiChat = async (req, res) => {
     const hasNextQuestion = userConversation.questionsAsked < MAX_QUESTIONS;
 
     if (hasNextQuestion) {
-      const prompt = `The user has described the following problem: "${problemStatement}". Based on this problem, generate a relevant question that helps the technician. Limit it to 1 question.`;
+      const prompt = `The user has described the following problem: "${problemStatement}". Based on this problem, generate a relevant question that helps the technician. Limit it to 1 question.only return the italian language`;
 
       const response = await client.chat.completions.create({
         model: "gpt-4", // You can use gpt-4 or gpt-3.5-turbo depending on your setup
@@ -240,9 +304,9 @@ const geminiChat = async (req, res) => {
       userConversation.questionsAsked += 1;
 
       // Translate the follow-up question to Italian
-      const translatedResponse = await translateToItalian(
-        response.choices[0].message.content.trim().toLowerCase()
-      );
+      // const translatedResponse = await translateToItalian(
+      //   response.choices[0].message.content.trim().toLowerCase()
+      // );
 
       return res.json({
         response: response.choices[0].message.content.trim().toLowerCase(),
@@ -272,4 +336,4 @@ const geminiChat = async (req, res) => {
   }
 };
 
-module.exports = geminiChat;
+module.exports = {geminiChat, simpleSupportChat};
