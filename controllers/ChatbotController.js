@@ -187,7 +187,7 @@ make it a 1 line question based on the situation in italian
 
 
 const simpleSupportChat = async (req, res) => {
-  const { userInput } = req.body; 
+  const { userInput } = req.params; 
 console.log('input' , userInput);
 
   try {
