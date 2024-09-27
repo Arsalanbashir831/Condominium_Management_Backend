@@ -1,10 +1,207 @@
 const { OpenAI } = require("openai");
 const translate = require("translate-google"); // Import translate-google
-const MAX_QUESTIONS = 0;
-const userConversations = {};
+const { GoogleGenerativeAI } = require("@google/generative-ai");
+const nodemailer = require("nodemailer");
+const Condominium = require("../models/Condominium");
+const Technician = require("../models/Technician");
+const { Ticket, User } = require("../models/Assosiation");
+const PrefCommunication = require("../models/PrefCommunication");
+
 const client = new OpenAI({
   apiKey: process.env.OPENAI_API,
 });
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.GMAIL_APP_NAME,
+    pass: process.env.GMAIL_APP_PASS,
+  },
+});
+const getTechniciansByCondominiumId = async (condominiumId) => {
+  console.log("get technician function ", condominiumId);
+
+  if (!condominiumId) {
+    throw new Error("CondominiumId is required.");
+  }
+
+  try {
+    const technicians = await Technician.findAll({
+      where: { CondominiumId: condominiumId },
+      include: [
+        {
+          model: Condominium,
+          as: "condominiumTech",
+          attributes: ["id", "name"],
+        },
+        {
+          model: PrefCommunication,
+          as: "prefCommunication",
+          attributes: ["id", "name"],
+        },
+      ],
+    });
+
+    if (!technicians.length) {
+      throw new Error("No technicians found for this condominium.");
+    }
+
+    return technicians.map((technician) => technician.dataValues);
+  } catch (error) {
+    console.error("Error fetching technicians by condominiumId:", error);
+    throw new Error("An error occurred while fetching technicians.");
+  }
+};
+const selectBestTechnician = async (problemStatement, condominiumId) => {
+  console.log("Selecting best technician for condominium:", condominiumId);
+
+  const technicianData = await getTechniciansByCondominiumId(condominiumId);
+  const prompt = `
+      You are an AI assistant for a condominium manager. Based on the following problem statement: "${problemStatement}", 
+      evaluate the list of technicians provided and determine which technician would be the most suitable to address this issue. 
+      Provide only the technician's ID,Company Name, email, and contact number in your response, formatted as JSON.
+
+      Here are the technicians:
+      ${JSON.stringify(technicianData)}
+  `;
+
+  try {
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const result = await model.generateContent(prompt);
+
+    let responseText = result.response.text().trim();
+    console.log("Raw AI response:", responseText); // Log the raw response
+    responseText = responseText.replace(/```json|```/g, "").trim(); // Remove the backticks
+    const technicianResponse = JSON.parse(responseText);
+    return {
+      id: technicianResponse.id,
+      email: technicianResponse.email,
+      contactNumber: technicianResponse.ContactNumber || "Not provided",
+      CompanyName: technicianData[0].CompanyName || "Not provided",
+    };
+  } catch (error) {
+    console.error("Error selecting best technician:", error);
+
+    if (technicianData.length > 0) {
+      return {
+        id: technicianData[0].id,
+        email: technicianData[0].email,
+        contactNumber: technicianData[0].contactNumber || "Not provided",
+        CompanyName: technicianData[0].CompanyName || "Not provided",
+      };
+    } else {
+      return {
+        id: 27,
+        email: "info@vetri-finestre.it",
+        contactNumber: "+39 333 9012346",
+      };
+    }
+  }
+};
+
+const createTicket = async (userId, priority, ProblemStatement, condominiumId, IsPermitToAutoMail) => {  
+   const user = await getUserById(userId);
+    const { id, email, contactNumber, CompanyName } = await selectBestTechnician(
+      ProblemStatement,
+      condominiumId
+    );
+
+  try {
+    // Create the ticket
+    const ticket = await Ticket.create({
+      userId,
+      priority,
+      ProblemStatement,
+      technicianId: id, // Use the selected technician ID
+      statusId: 1,
+      IsPermitToAutoMail
+    });
+
+    if (IsPermitToAutoMail) {
+      const approveUrl = `${process.env.FRONTEND_URL}/tickets/${ticket.id}/2`;
+      const rejectUrl = `${process.env.FRONTEND_URL}/tickets/${ticket.id}/3`;
+
+      const mailOptions = {
+        from: process.env.GMAIL_APP_NAME,
+        to: email,
+        subject: "Assistance Required: At Condominium " + user.condominium,
+        html: `
+          <p>Dear <strong>${CompanyName}</strong>,</p>
+          <p>We are facing the problem of <strong>${ProblemStatement}</strong> at condominium <strong>${user.condominium}</strong>.</p>
+          <p>Here are the user details, please contact them:</p>
+          <ul>
+            <li>Name: ${user.name}</li>
+            <li>Email: ${user.email}</li>
+            <li>Contact Number: ${user.contactNumber}</li>
+            <li>Apartment: ${user.apartment}</li>
+          </ul>
+          <p>Please approve or reject this ticket:</p>
+          <p>
+            <a href="${approveUrl}" style="padding: 10px 20px; background-color: green; color: white; text-decoration: none; border-radius: 5px;">Approve</a>
+            <a href="${rejectUrl}" style="padding: 10px 20px; background-color: red; color: white; text-decoration: none; border-radius: 5px;">Reject</a>
+          </p>
+          <p>Best regards,<br>Condominium Manager</p>
+        `,
+      };
+
+      await transporter.sendMail(mailOptions);
+      console.log("Email sent to technician:", email);
+    } else {
+      console.log("Email permission not granted, skipping email.");
+    }
+console.log('Ticked created ');
+    return ticket
+  } catch (error) {
+    console.error("Error creating ticket or sending email:", error);
+    // res.status(500).json({ message: "An error occurred while creating the ticket." });
+  }
+};
+
+
+
+
+
+
+
+
+async function getUserById(userId) {
+  try {
+    const user = await User.findOne({
+      where: { id: userId },
+      attributes: [
+        "id",
+        "email",
+        "name",
+        "surname",
+        "apartment",
+        "contactNumber",
+        "createdAt",
+      ],
+      include: [
+        {
+          model: Condominium,
+          as: "condominium",
+          attributes: ["name"],
+        },
+      ],
+    });
+
+    if (!user) {
+      return { error: "User not found" };
+    }
+    return {
+      ...user.dataValues,
+      condominium: user.dataValues.condominium.dataValues.name,
+    };
+  } catch (error) {
+    console.error("Error fetching user:", error);
+    return { error: "An error occurred while fetching user details" };
+  }
+}
+
+
+
+
 
 const classifyProblem = async (problemStatement) => {
   const prompt = `Classifica la seguente descrizione del problema in una di queste categorie: idraulico, elettricista o tecnico. Descrizione del problema: "${problemStatement}". Menziona solo il nome della categoria, senza bisogno di giustificazione.`;
@@ -95,130 +292,51 @@ const generateTagline = async (problemStatement) => {
   }
 };
 
-const generateInitialResponse = async (
-  problemStatement,
-  technicianType,
-  tagline,username
-) => {
+const generateInitialResponse = async (technicianType,username) => {
 
     return `ok ${username}, grazie per la tua segnalazione. Abbiamo già avvisato il ${technicianType} e arriverà il prima possibile.`
-//   const prompt = `
-// Sei l'assistente del servizio clienti di un gestore di condominio. Aiuta il cliente a identificare il ${problemStatement} nel loro condominio o appartamento. Fai una sola domanda in italiano, simile agli esempi seguenti:
-// ### *1. Tubo rotto in area comune*
-// 1. “Puoi dirmi esattamente dove si trova la perdita? È vicino a un’area specifica del giardino?”
-// 2. “La perdita è molto evidente, o si tratta di una piccola infiltrazione d’acqua?”
-// 3. “L’acqua sta fuoriuscendo velocemente o è una perdita lenta?”
-// ### *2. Cancello del garage che non funziona*
-// 1. “Il cancello emette qualche rumore quando provi ad aprirlo, o rimane completamente bloccato?”
-// ### *3. Erba troppo alta nell’area comune*
-// 1. “Puoi indicare quale parte del giardino ha bisogno di essere tagliata? È solo una zona specifica o tutta l’area verde?”
-// 2. “L’erba è molto alta o necessita solo di una manutenzione leggera?”
-// 3. “Hai notato altre aree comuni che hanno bisogno di manutenzione oltre al giardino?”
-// ### *4. Ascensore fuori uso*
-// 1. “Sai se l’ascensore è fermo a un piano preciso o tra due piani?”
-// 2. “L’ascensore emette qualche suono d’allarme o è completamente fermo?”
-// ### *5. Luci non funzionanti nella scala*
-// 1. “Le luci sono spente solo su un piano o nell’intera scala?”
-// 2. “Ci sono altre zone del condominio dove hai notato problemi con le luci?”
-// 3. “Le lampadine sono completamente spente o fanno luce in modo intermittente?”
-// ### *6. Porta d’ingresso che non si chiude*
-// 1. “Il problema riguarda la serratura o la porta che non si allinea bene quando si chiude?”
-// 2. “La porta rimane aperta completamente o si chiude solo parzialmente?”
-// 3. “Hai notato se ci sono parti danneggiate sulla serratura o sulla maniglia?”
-// ### *7. Rifiuti non raccolti nell’area comune*
-// 1. “La mancata raccolta riguarda solo l’area principale o anche altre parti comuni?”
-// 2. “Le aree di raccolta dei rifiuti sono accessibili, o c’è qualcosa che potrebbe aver bloccato il passaggio?”
-// 3. “I rifiuti non sono stati raccolti solo oggi, o è successo anche nei giorni scorsi?”
-// ### *8. Allarme antincendio suona in modo casuale*
-// 1. “L’allarme suona solo in una specifica zona o in tutto il condominio?”
-// 2. “Succede in momenti specifici della giornata o in modo casuale?”
-// 3. “Ci sono altri segnali, come luci o spie, quando l’allarme suona?”
-// ### *9. Disputa sul parcheggio*
-// 1. “Qual è il numero del tuo posto auto, così posso verificare?”
-// 2. “Se possibile, puoi descrivere l’auto che occupa il tuo posto?”
-// 3. “Hai notato se la stessa auto parcheggia spesso nel tuo posto o è un caso isolato?”
-// ### *10. Perdita dal tetto nel corridoio comune*
-// 1. “Puoi dirmi esattamente dove si trova la perdita nel corridoio? Vicino a una porta o finestra?”
-// 2. “La perdita è piccola o si è allargata notevolmente?”
-// 3. “Hai notato altre infiltrazioni di acqua nella zona?”
-// ### *11. Attrezzatura del parco giochi danneggiata*
-// 1. “Quale parte del parco giochi è danneggiata? Si tratta di un’area specifica come altalene o scivolo?”
-// 2. “L’attrezzatura è completamente inutilizzabile o è ancora parzialmente funzionante?”
-// 3. “Hai notato altri giochi o attrezzature che necessitano manutenzione?”
-// ### *12. Rumore proveniente da aree comuni*
-// 1. “Puoi indicare da quale area comune proviene il rumore? È vicino a un cortile o in un’area specifica?”
-// 2. “Il rumore avviene sempre alla stessa ora, o è casuale?”
-// 3. “Hai notato chi sono le persone che causano il disturbo?”
-// ### *13. Tombini intasati nel vialetto condiviso*
-// 1. “Il problema riguarda solo un tombino o più di uno nel vialetto?”
-// 2. “L’acqua riesce a defluire lentamente o è completamente bloccata?”
-// 3. “Hai notato se il problema si verifica solo durante la pioggia intensa?”
-// ### *14. Telecamera di sicurezza non funzionante*
-// 1. “Quale telecamera di sicurezza ha smesso di funzionare? È quella all’ingresso o in un’altra area?”
-// 2. “La telecamera è completamente spenta o mostra solo un’immagine sfocata?”
-// 3. “Hai notato se il problema riguarda solo il live feed o anche la registrazione?”
-// ### *15. Recinzione danneggiata nell’area perimetrale*
-// 1. “Puoi specificare quale parte della recinzione è danneggiata? È vicino a un ingresso o in un’area particolare?”
-// 2. “La recinzione è solo piegata o completamente caduta?”
-// 3. “Hai notato se ci sono altri punti danneggiati lungo la recinzione?
 
-// make it a 1 line question based on the situation in italian
-// ”`;
-
-//   try {
-//     const response = await client.chat.completions.create({
-//       model: "gpt-4", // You can use gpt-4 or gpt-3.5-turbo depending on your setup
-//       messages: [{ role: "system", content: prompt }],
-//     });
-//     return response.choices[0].message.content.trim().toLowerCase();
-//   } catch (error) {
-//     console.error("Error generating initial response:", error);
-//     return `Thank you for reporting. We will inform the ${technicianType} based on the problem. Here's a tagline for your issue: "${tagline}".`;
-//   }
 };
 
-// const translateToItalian = async (text) => {
-//   try {
-//     const translatedText = await translate(text, { to: "it" });
-//     return translatedText;
-//   } catch (error) {
-//     console.error("Error translating to Italian:", error);
-//     return text;
-//   }
-// };
 
+const aiproblemSolver = async ({ userId, problemStatement, username , condominiumId }) => {
+  try {
+    if (!userId || !problemStatement || !username) {
+      throw new Error("UserId, problemStatement, and username are required.");
+    }
+
+    const technicianType = await classifyProblem(problemStatement);
+    const tagline = await generateTagline(problemStatement);
+    const priority = await classifyPriority(problemStatement);
+    const initialResponse = await generateInitialResponse(technicianType, username);
+   await createTicket(userId, priority, problemStatement, condominiumId, true)
+    return {
+      response: initialResponse,
+      tagline,
+      priority,
+      hasNextQuestion: false,
+    };
+  } catch (error) {
+    console.error("Error handling chatbot interaction:", error);
+    throw new Error("Error handling chatbot interaction: " + error.message);
+  }
+};
 
 const simpleSupportChat = async (req, res) => {
-  const { userInput } = req.params; 
-console.log('input' , userInput);
+  const { problemStatement,userId, username , condominiumId} = req.params;
 
   try {
     // Convert the user input to lowercase for case-insensitive matching
-    const lowerInput = userInput.toLowerCase();
-    
+    const lowerInput = problemStatement.toLowerCase();
+
     // Define keywords indicating appreciation
     const appreciationKeywords = [
-      "thanks",
-      "thank you",
-      "thank",
-      "grazie",
-      "appreciate",
-      "apprezzo",
-      "thanks a lot",
-      "much appreciated",
-      "thank you very much",
-      // Additional Italian keywords
-      "mille grazie", // a thousand thanks
-      "ti ringrazio", // I thank you
-      "grazie mille", // thank you very much
-      "ringrazio", // I thank (formal)
-      "sono grato", // I am grateful
-      "sono riconoscente", // I am thankful
-      "grazie tante", // many thanks
-      "grazie per tutto" // thank you for everything
-  ];
-  
-    
+      "thanks", "thank you", "thank", "grazie", "appreciate", "apprezzo",
+      "thanks a lot", "much appreciated", "thank you very much",
+      "mille grazie", "ti ringrazio", "grazie mille", "ringrazio",
+      "sono grato", "sono riconoscente", "grazie tante", "grazie per tutto"
+    ];
+
     // Check if the user input contains any appreciation keywords
     const isAppreciation = appreciationKeywords.some(keyword => lowerInput.includes(keyword));
 
@@ -228,7 +346,8 @@ console.log('input' , userInput);
         messages: [
           {
             role: "assistant",
-            content: `You have to understand user response and you already helped them. Now user is happy and saying: ${userInput}. Handle the user response in your way in 1 line like if user says: ${userInput}, then say "We are always here for you. It's my pleasure." So accept it like you are most welcome, we are always here to assist you.`
+           content: `Devi capire la risposta dell'utente e lo hai già aiutato. Ora l'utente è felice e sta dicendo: ${problemStatement}. Gestisci la risposta dell'utente a modo tuo in una frase, come se l'utente dicesse: ${problemStatement}, rispondi "Siamo sempre qui per te. È un piacere." Accettalo come un ringraziamento, e rispondi che siamo sempre pronti ad assisterti.`
+
           }
         ],
       });
@@ -237,10 +356,18 @@ console.log('input' , userInput);
       const chatResponse = response.choices[0].message.content.trim();
 
       // Send the response back to the user
-      res.status(200).json({ response: chatResponse, isProblem: false});
-    } else{
+      res.status(200).json({ response: chatResponse, isProblem:false });
+    } else {
+      // Pass the parameters as an object to aiproblemSolver
+      const { response, tagline, priority, hasNextQuestion } = await aiproblemSolver({ userId, problemStatement, username , condominiumId });
 
-      res.status(200).json({ response: "Per favore, menziona di nuovo il tuo problema e ti indirizziamo di nuovo verso l'amministratore del condominio.", isProblem: true });
+      res.status(200).json({
+        response,
+        tagline,
+        priority,
+        hasNextQuestion,
+        isProblem:true
+      });
     }
   } catch (error) {
     console.error("Error generating chatbot response:", error);
@@ -253,84 +380,32 @@ console.log('input' , userInput);
 };
 
 
+
+
+// The simplified geminiChat endpoint
 const geminiChat = async (req, res) => {
   try {
     const { userId, problemStatement, username } = req.body;
 
-    if (!userId || !problemStatement) {
-      return res
-        .status(400)
-        .json({ message: "UserId and problemStatement are required." });
+    if (!userId || !problemStatement || !username) {
+      return res.status(400).json({ message: "UserId, problemStatement, and username are required." });
     }
-
-    if (!userConversations[userId]) {
-      const technicianType = await classifyProblem(problemStatement);
-      const tagline = await generateTagline(problemStatement);
-      const priority = await classifyPriority(problemStatement); // New priority classification
-      const initialResponse = await generateInitialResponse(
-        problemStatement,
-        technicianType,
-        tagline,username
-      );
-
-      // const translatedResponse = await translateToItalian(initialResponse);
-
-      userConversations[userId] = {
-        problemStatement,
-        questionsAsked: 0,
-        technicianType,
-        tagline,
-        priority,
-        hasAskedPriority: false, // No need to ask priority anymore
-      };
-
-      return res.json({
-        response: initialResponse,
-        hasNextQuestion: false,
-        tagline,
-        priority,
-      });
-    }
-
-    const userConversation = userConversations[userId];
-    const hasNextQuestion = false
-    // const hasNextQuestion = userConversation.questionsAsked < MAX_QUESTIONS;
-
-    // if (hasNextQuestion) {
-    //   const prompt = `The user has described the following problem: "${problemStatement}". Based on this problem, generate a relevant question that helps the technician. Limit it to 1 question.only return the italian language`;
-
-    //   const response = await client.chat.completions.create({
-    //     model: "gpt-gpt-4", // You can use gpt-4 or gpt-3.5-turbo depending on your setup
-    //     messages: [{ role: "user", content: prompt }],
-    //   });
-
-    //   userConversation.questionsAsked += 1;
-
-    //   return res.json({
-    //     response: response.choices[0].message.content.trim().toLowerCase(),
-    //     hasNextQuestion,
-    //     tagline: userConversation.tagline,
-    //     priority: userConversation.priority,
-    //   });
-    // }
-
-    const finalResponse = `ok ${username}, grazie per la tua segnalazione. Abbiamo già avvisato il ${userConversation.technicianType} e arriverà il prima possibile.`;
-
-    delete userConversations[userId];
-    // return res.json({
-    //   response: finalResponse,
-    //   hasNextQuestion: false,
-    //   tagline: userConversation.tagline,
-    //   priority: userConversation.priority,
-    // });
+    const technicianType = await classifyProblem(problemStatement);
+    const tagline = await generateTagline(problemStatement);
+    const priority = await classifyPriority(problemStatement);
+    const initialResponse = await generateInitialResponse( technicianType,username);
+    return res.json({
+      response: initialResponse,
+      tagline,
+     priority,
+     hasNextQuestion: false,
+    });
   } catch (error) {
     console.error("Error handling chatbot interaction:", error);
-    res
-      .status(500)
-      .json({
-        message: "Error handling chatbot interaction",
-        error: error.message,
-      });
+    res.status(500).json({
+      message: "Error handling chatbot interaction",
+      error: error.message,
+    });
   }
 };
 
