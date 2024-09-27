@@ -98,10 +98,10 @@ const generateTagline = async (problemStatement) => {
 const generateInitialResponse = async (
   problemStatement,
   technicianType,
-  tagline
+  tagline,username
 ) => {
 
-    return `thank you for your notice. We will send ${technicianType}.`
+    return `ok ${username}, grazie per la tua segnalazione. Abbiamo già avvisato il ${technicianType} e arriverà il prima possibile.`
 //   const prompt = `
 // Sei l'assistente del servizio clienti di un gestore di condominio. Aiuta il cliente a identificare il ${problemStatement} nel loro condominio o appartamento. Fai una sola domanda in italiano, simile agli esempi seguenti:
 // ### *1. Tubo rotto in area comune*
@@ -270,14 +270,14 @@ const geminiChat = async (req, res) => {
       const initialResponse = await generateInitialResponse(
         problemStatement,
         technicianType,
-        tagline
+        tagline,username
       );
 
       // const translatedResponse = await translateToItalian(initialResponse);
 
       userConversations[userId] = {
         problemStatement,
-        questionsAsked: 1,
+        questionsAsked: 0,
         technicianType,
         tagline,
         priority,
@@ -293,40 +293,36 @@ const geminiChat = async (req, res) => {
     }
 
     const userConversation = userConversations[userId];
-    const hasNextQuestion = userConversation.questionsAsked < MAX_QUESTIONS;
+    const hasNextQuestion = false
+    // const hasNextQuestion = userConversation.questionsAsked < MAX_QUESTIONS;
 
-    if (hasNextQuestion) {
-      const prompt = `The user has described the following problem: "${problemStatement}". Based on this problem, generate a relevant question that helps the technician. Limit it to 1 question.only return the italian language`;
+    // if (hasNextQuestion) {
+    //   const prompt = `The user has described the following problem: "${problemStatement}". Based on this problem, generate a relevant question that helps the technician. Limit it to 1 question.only return the italian language`;
 
-      const response = await client.chat.completions.create({
-        model: "gpt-gpt-4", // You can use gpt-4 or gpt-3.5-turbo depending on your setup
-        messages: [{ role: "user", content: prompt }],
-      });
+    //   const response = await client.chat.completions.create({
+    //     model: "gpt-gpt-4", // You can use gpt-4 or gpt-3.5-turbo depending on your setup
+    //     messages: [{ role: "user", content: prompt }],
+    //   });
 
-      userConversation.questionsAsked += 1;
+    //   userConversation.questionsAsked += 1;
 
-      // Translate the follow-up question to Italian
-      // const translatedResponse = await translateToItalian(
-      //   response.choices[0].message.content.trim().toLowerCase()
-      // );
-
-      return res.json({
-        response: response.choices[0].message.content.trim().toLowerCase(),
-        hasNextQuestion,
-        tagline: userConversation.tagline,
-        priority: userConversation.priority,
-      });
-    }
+    //   return res.json({
+    //     response: response.choices[0].message.content.trim().toLowerCase(),
+    //     hasNextQuestion,
+    //     tagline: userConversation.tagline,
+    //     priority: userConversation.priority,
+    //   });
+    // }
 
     const finalResponse = `ok ${username}, grazie per la tua segnalazione. Abbiamo già avvisato il ${userConversation.technicianType} e arriverà il prima possibile.`;
 
     delete userConversations[userId];
-    return res.json({
-      response: finalResponse,
-      hasNextQuestion: false,
-      tagline: userConversation.tagline,
-      priority: userConversation.priority,
-    });
+    // return res.json({
+    //   response: finalResponse,
+    //   hasNextQuestion: false,
+    //   tagline: userConversation.tagline,
+    //   priority: userConversation.priority,
+    // });
   } catch (error) {
     console.error("Error handling chatbot interaction:", error);
     res
