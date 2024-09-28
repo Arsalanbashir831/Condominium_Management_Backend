@@ -414,58 +414,92 @@ const aiproblemSolver = async ({ userId, problemStatement, username , condominiu
 };
 
 const simpleSupportChat = async (req, res) => {
-  const { problemStatement,userId, username , condominiumId} = req.params;
+  const { problemStatement, userId, username, condominiumId } = req.params;
   console.log(problemStatement);
-  
-const prompt = ` this is the user input : "${problemStatement}" now your job is to identify that if the user facing the problem  or showing acknowledgment or appreiciating your response just say 2 if it is a problem and say 0 if it is an appreciation message and say 1 if it is the acknowledgment message, if it is the acknowledgment message like (yes i got it , acknowledged , got it  etc) than it will be 1  only if the user mention the problem than it will be 2 for example  the issue of condominium , camera , door etc . dont give justification just say 0 or 1 or 2 choose any 1 only`
+
+  // Define the prompt with clear instructions to classify the user input
+  const prompt = `
+    This is the user input: "${problemStatement}".
+    Your task is to classify the input into one of the following categories:
+    - 0: Appreciation (e.g., "Thank you", "Thanks a lot", "You are great").
+    - 1: Acknowledgment (e.g., "Yes, I got it", "Acknowledged").
+    - 2: Problem Statement (A clear problem description, e.g., "The camera is not working", "The door is jammed").
+    - 3: Vague Problem (e.g., "I have a problem", "I am facing an issue" where the actual problem isn't described).
+
+    Return only one number (0, 1, 2, or 3), without any additional text or justification.
+  `;
+
   try {
- 
-    // Convert the user input to lowercase for case-insensitive matching
-    // const lowerInput = problemStatement.toLowerCase();
+    // Initialize the Google Generative AI model
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+
+    // Get the AI-generated response based on the problem statement
     const result = await model.generateContent(prompt);
-    // return result.response.text().trim();
-    // Define keywords indicating appreciation
-    // const appreciationKeywords = [
-    //   "thanks", "thank you", "thank", "grazie", "appreciate", "apprezzo",
-    //   "thanks a lot", "much appreciated", "thank you very much",
-    //   "mille grazie", "ti ringrazio", "grazie mille", "ringrazio",
-    //   "sono grato", "sono riconoscente", "grazie tante", "grazie per tutto", "ok",'when','quando','where','dove','tecnico','elettricista','idraulico'  , 'plumber', 'electrician','technician'
-    // ];
+    const responseCode = result.response.text().trim();
 
-console.log(result.response.text().trim());
+    // Handle different responses based on the AI's classification
+    if (responseCode === '0') {
+      // User appreciation message
+      const appreciationPrompt = `
+        This is the user's appreciation: "${problemStatement}".
+       Now identify the user's appreciation if it is "thank you", you just return with any one of the only message like  :
+        - "Di nulla!"
+        - "Prego!"
+        - "Non c’è di che!"
 
-    // Check if the user input contains any appreciation keywords
-    const isAppreciation = result.response.text().trim()  ==='0' || result.response.text().trim()  ==='1'  ?true :false
+     Now identify the user's appreciation if it is  "have a nice day", you just return with any one of the only message like:
+        - "Grazie, anche a te."
+        - "Grazie, altrettanto."
+        - "Grazie, buona giornata anche a te.
+        
+        just say one word only no need to create a big statement just your welcome or thank you etc nothing much more and it should be italian languge only
+        "
+      `;
 
-    if (isAppreciation) {
-      const response = await client.chat.completions.create({
-        model: "gpt-4",
-        messages: [
-          {
-            role: "assistant",
-           content: `Devi capire la risposta dell'utente e lo hai già aiutato. Ora l'utente è felice e sta dicendo: ${problemStatement}. Gestisci la risposta dell'utente a modo tuo in una frase, come se l'utente dicesse: ${problemStatement}, rispondi "Siamo sempre qui per te. È un piacere." Accettalo come un ringraziamento, e rispondi che siamo sempre pronti ad assisterti.`
-
-          }
-        ],
-      });
-
-      // Get the response content
-      const chatResponse = response.choices[0].message.content.trim();
-
-      // Send the response back to the user
-      res.status(200).json({ response: chatResponse, isProblem:false });
-    } else {
-      // Pass the parameters as an object to aiproblemSolver
-      const { response, tagline, priority, hasNextQuestion } = await aiproblemSolver({ userId, problemStatement, username , condominiumId });
-
+      const appreciationResponse = await model.generateContent(appreciationPrompt);
       res.status(200).json({
-        response,
+        response: appreciationResponse.response.text().trim(),
+        isProblem: false
+      });
+    } else if (responseCode === '3') {
+      // Vague problem statement
+      res.status(200).json({
+        response: "Per favore, ditemi qual è il problema che state affrontando",
+        isProblem: false
+      });
+    } else if (responseCode === '2') {
+      // Actual problem statement (create ticket)
+      const { response, tagline, priority, hasNextQuestion } = await aiproblemSolver({
+        userId,
+        problemStatement,
+        username,
+        condominiumId
+      });
+      const prompt=`After identifying the problem statement which is : ${problemStatement} you have choose any one of the template as response but only one not more than one:
+"Okay ${username}, grazie per la segnalazione. Abbiamo avvisato il tecnico e arriverà il prima possibile"
+"Grazie per averci avvisato, ${username}. Abbiamo già contattato il tecnico, che arriverà al più presto."
+"Perfetto ${username}, la tua segnalazione è stata presa in carico. Il tecnico è stato avvisato e si occuperà della situazione al più presto."
+"Grazie ${username}, abbiamo inoltrato la segnalazione al tecnico. Si recherà da te il prima possibile."
+"Ok ${username}, grazie per il messaggio. Il tecnico è già stato informato e arriverà al più presto."
+"Grazie ${username}, abbiamo avvisato il tecnico che interverrà il prima possibile."`
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+
+const result = await model.generateContent(prompt);
+const message = result.response.text().trim();
+      res.status(200).json({
+        response: message,
         tagline,
         priority,
         hasNextQuestion,
-        isProblem:true
+        isProblem: true
+      });
+    } else if (responseCode === '1') {
+      // Acknowledgment message
+      res.status(200).json({
+        response: "Acknowledged!",
+        isProblem: false
       });
     }
   } catch (error) {
