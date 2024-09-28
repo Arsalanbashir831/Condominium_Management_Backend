@@ -204,7 +204,10 @@ async function getUserById(userId) {
 
 
 const classifyProblem = async (problemStatement) => {
-  const prompt = `Classifica la seguente descrizione del problema in una di queste categorie: idraulico, elettricista o tecnico. Descrizione del problema: "${problemStatement}". Menziona solo il nome della categoria, senza bisogno di giustificazione.`;
+  // const prompt = `Classifica la seguente descrizione del problema in una di queste categorie: idraulico, elettricista o tecnico. Descrizione del problema: "${problemStatement}". Menziona solo il nome della categoria, senza bisogno di giustificazione.`;
+  const prompt = `Classifica la seguente descrizione del problema in una di queste categorie: idraulico, elettricista o tecnico. Descrizione del problema: "${problemStatement}". Menziona solo il nome della categoria, senza bisogno di giustificazione. Se la descrizione è vaga o simile, scegli "tecnico".`;
+
+
   try {
     const response = await client.chat.completions.create({
       model: "gpt-4", // You can use gpt-4 or gpt-3.5-turbo depending on your setup
@@ -334,8 +337,9 @@ const simpleSupportChat = async (req, res) => {
       "thanks", "thank you", "thank", "grazie", "appreciate", "apprezzo",
       "thanks a lot", "much appreciated", "thank you very much",
       "mille grazie", "ti ringrazio", "grazie mille", "ringrazio",
-      "sono grato", "sono riconoscente", "grazie tante", "grazie per tutto"
+      "sono grato", "sono riconoscente", "grazie tante", "grazie per tutto", "ok",'when','quando','where','dove','tecnico','elettricista','idraulico'  , 'plumber', 'electrician','technician'
     ];
+
 
     // Check if the user input contains any appreciation keywords
     const isAppreciation = appreciationKeywords.some(keyword => lowerInput.includes(keyword));
