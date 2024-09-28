@@ -202,30 +202,103 @@ async function getUserById(userId) {
 
 
 
-
 const classifyProblem = async (problemStatement) => {
-  // const prompt = `Classifica la seguente descrizione del problema in una di queste categorie: idraulico, elettricista o tecnico. Descrizione del problema: "${problemStatement}". Menziona solo il nome della categoria, senza bisogno di giustificazione.`;
-  const prompt = `Classifica la seguente descrizione del problema in una di queste categorie: idraulico, elettricista o tecnico. Descrizione del problema: "${problemStatement}". Menziona solo il nome della categoria, senza bisogno di giustificazione. Se la descrizione è vaga o simile, scegli "tecnico".`;
+  
+    const prompt = `Classifica la seguente descrizione del problema in una di queste categorie: idraulico, elettricista o tecnico. Descrizione del problema: "${problemStatement}". Menziona solo il nome della categoria, senza bisogno di giustificazione. Se la descrizione è vaga o simile, scegli "tecnico".`;
 
 
-  try {
-    const response = await client.chat.completions.create({
-      model: "gpt-4", // You can use gpt-4 or gpt-3.5-turbo depending on your setup
-      messages: [{ role: "user", content: prompt }],
-    });
-    return response.choices[0].message.content.trim().toLowerCase();
-  } catch (error) {
-    console.error("Error classifying problem:", error);
-    return "tecnico";
-  }
+    try {
+        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+        const result = await model.generateContent(prompt);
+        return result.response.text().trim().toLowerCase();
+    } catch (error) {
+        console.error('Error classifying problem:', error);
+        return 'tecnico'; 
+    }
 };
+// const classifyProblem = async (problemStatement) => {
+
+//   const prompt = `Classifica la seguente descrizione del problema in una di queste categorie: idraulico, elettricista o tecnico. Descrizione del problema: "${problemStatement}". Menziona solo il nome della categoria, senza bisogno di giustificazione. Se la descrizione è vaga o simile, scegli "tecnico".`;
+
+
+//   try {
+//     const response = await client.chat.completions.create({
+//       model: "gpt-4", // You can use gpt-4 or gpt-3.5-turbo depending on your setup
+//       messages: [{ role: "user", content: prompt }],
+//     });
+//     return response.choices[0].message.content.trim().toLowerCase();
+//   } catch (error) {
+//     console.error("Error classifying problem:", error);
+//     return "tecnico";
+//   }
+// };
+
+// const classifyPriority = async (problemStatement) => {
+//   const prompt = `
+//         Based on the following problem statement, classify it into one of these categories: urgent, fairly urgent, non-urgent.
+//         Problem statement: "${problemStatement}".
+//         and on the creteria to decide on which you have to train and give result
+//          Urgent Requests:
+
+// 1. Major water leak in my apartment damaging the ceiling.
+// 2. ⁠Elevator stuck with people inside.
+// 3. ⁠Short circuit causing a blackout in the building.
+// 4. ⁠Broken lock on the main entrance, we can’t enter or leave.
+// 5. ⁠Fire in a common area (e.g., basement, garage).
+// 6. ⁠Water infiltration in the garage that may cause immediate damage.
+// 7. ⁠Suspected gas leak, I smell strong gas throughout the building.
+// 8. ⁠Rodent or insect infestation visible in common areas.
+// 9. ⁠Complete heating system failure in the middle of winter.
+// 10. ⁠Flooding in the basement due to a broken pipe.
+
+// Fairly Urgent Requests:
+
+// 1. Elevator malfunction, no one is trapped but it hasn't worked for a day.
+// 2. ⁠Power outage in the common areas of the building.
+// 3. ⁠Small water leak in the shared garden.Garage door not opening properly.
+// 4. ⁠Loud and constant noise coming from an apartment, disturbing neighbors.
+// 5. ⁠Insufficient heating in the apartments.
+// 6. ⁠Lighting in the stairwell not working.
+// 7. ⁠Broken glass on the main entrance door.
+// 8. ⁠Slight water leak from the roof during rain.
+// 9. ⁠Persistent mold smell in the shared basements.
+
+// Non-Urgent Requests:
+
+// 1. Request for information about the date of the next condo meeting.
+// 2. ⁠Request for a copy of the condominium rules.
+// 3. ⁠Request to install a bike rack in the common areas.
+// 4. ⁠Request to change the timing of the courtyard’s automatic lights.
+// 5. ⁠Proposal to repaint the walls of the common stairwells.
+// 6. ⁠Report of a small scratch on a car in the condo parking lot.
+// 7. ⁠Request for tree trimming in the shared garden.
+// 8. ⁠Question about when the elevator’s regular maintenance is scheduled.
+// 9. ⁠Request for information on upcoming condo fees.
+// 10. ⁠Request to replace a light bulb in one of the parking lights.
+        
+//         Just return the urgency level (urgent, fairly urgent, or non-urgent).
+//         dont give me explaination just say urgent , not urgent and fairly urgent thats it
+//     `;
+
+//   try {
+//     const response = await client.chat.completions.create({
+//       model: "gpt-4", // You can use gpt-4 or gpt-3.5-turbo depending on your setup
+//       messages: [{ role: "user", content: prompt }],
+//     });
+//     return response.choices[0].message.content.trim().toLowerCase();
+//   } catch (error) {
+//     console.error("Error classifying priority:", error);
+//     return "non-urgent";
+//   }
+// };
+
 
 const classifyPriority = async (problemStatement) => {
-  const prompt = `
+    const prompt = `
         Based on the following problem statement, classify it into one of these categories: urgent, fairly urgent, non-urgent.
         Problem statement: "${problemStatement}".
-        and on the creteria to decide on which you have to train and give result
-         Urgent Requests:
+      Urgent Requests:
 
 1. Major water leak in my apartment damaging the ceiling.
 2. ⁠Elevator stuck with people inside.
@@ -267,33 +340,48 @@ Non-Urgent Requests:
         dont give me explaination just say urgent , not urgent and fairly urgent thats it
     `;
 
-  try {
-    const response = await client.chat.completions.create({
-      model: "gpt-4", // You can use gpt-4 or gpt-3.5-turbo depending on your setup
-      messages: [{ role: "user", content: prompt }],
-    });
-    return response.choices[0].message.content.trim().toLowerCase();
-  } catch (error) {
-    console.error("Error classifying priority:", error);
-    return "non-urgent";
-  }
+    try {
+        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+        const result = await model.generateContent(prompt);
+        return result.response.text().trim().toLowerCase();
+    } catch (error) {
+        console.error('Error classifying priority:', error);
+        return 'non-urgent'; 
+    }
 };
+
+
+// const generateTagline = async (problemStatement) => {
+//   const prompt = `Creami una dichiarazione in una riga per il seguente problema: "${problemStatement}". Rendilo super semplificato in una sola riga senza alcuna decorazione di testo o nuove righe. Traducilo in italiano e fornisci solo uno slogan senza dare dettagli, rendilo pertinente e diretto al punto.`;
+
+
+//   try {
+//     const response = await client.chat.completions.create({
+//       model: "gpt-4",
+//       messages: [{ role: "user", content: prompt }],
+//     });
+//     return response.choices[0].message.content.trim().toLowerCase();
+//   } catch (error) {
+//     console.error("Error generating tagline:", error);
+//     return "No tagline available.";
+//   }
+// };
 
 const generateTagline = async (problemStatement) => {
-  const prompt = `Creami una dichiarazione in una riga per il seguente problema: "${problemStatement}". Rendilo super semplificato in una sola riga senza alcuna decorazione di testo o nuove righe. Traducilo in italiano e fornisci solo uno slogan senza dare dettagli, rendilo pertinente e diretto al punto.`;
+    const prompt = `Creami una dichiarazione in una riga per il seguente problema: "${problemStatement}". Rendilo super semplificato in una sola riga senza alcuna decorazione di testo o nuove righe. Traducilo in italiano e fornisci solo uno slogan senza dare dettagli, rendilo pertinente e diretto al punto.`;
 
-
-  try {
-    const response = await client.chat.completions.create({
-      model: "gpt-4",
-      messages: [{ role: "user", content: prompt }],
-    });
-    return response.choices[0].message.content.trim().toLowerCase();
-  } catch (error) {
-    console.error("Error generating tagline:", error);
-    return "No tagline available.";
-  }
+    try {
+        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+        const result = await model.generateContent(prompt);
+        return result.response.text().trim();
+    } catch (error) {
+        console.error('Error generating tagline:', error);
+        return 'No tagline available.';
+    }
 };
+
 
 const generateInitialResponse = async (technicianType,username) => {
 
@@ -327,22 +415,29 @@ const aiproblemSolver = async ({ userId, problemStatement, username , condominiu
 
 const simpleSupportChat = async (req, res) => {
   const { problemStatement,userId, username , condominiumId} = req.params;
-
+  console.log(problemStatement);
+  
+const prompt = ` this is the user input : "${problemStatement}" now your job is to identify that if the user facing the problem  or showing acknowledgment or appreiciating your response just say 2 if it is a problem and say 0 if it is an appreciation message and say 1 if it is the acknowledgment message, if it is the acknowledgment message like (yes i got it , acknowledged , got it  etc) than it will be 1  only if the user mention the problem than it will be 2 for example  the issue of condominium , camera , door etc . dont give justification just say 0 or 1 or 2 choose any 1 only`
   try {
+ 
     // Convert the user input to lowercase for case-insensitive matching
-    const lowerInput = problemStatement.toLowerCase();
-
+    // const lowerInput = problemStatement.toLowerCase();
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const result = await model.generateContent(prompt);
+    // return result.response.text().trim();
     // Define keywords indicating appreciation
-    const appreciationKeywords = [
-      "thanks", "thank you", "thank", "grazie", "appreciate", "apprezzo",
-      "thanks a lot", "much appreciated", "thank you very much",
-      "mille grazie", "ti ringrazio", "grazie mille", "ringrazio",
-      "sono grato", "sono riconoscente", "grazie tante", "grazie per tutto", "ok",'when','quando','where','dove','tecnico','elettricista','idraulico'  , 'plumber', 'electrician','technician'
-    ];
+    // const appreciationKeywords = [
+    //   "thanks", "thank you", "thank", "grazie", "appreciate", "apprezzo",
+    //   "thanks a lot", "much appreciated", "thank you very much",
+    //   "mille grazie", "ti ringrazio", "grazie mille", "ringrazio",
+    //   "sono grato", "sono riconoscente", "grazie tante", "grazie per tutto", "ok",'when','quando','where','dove','tecnico','elettricista','idraulico'  , 'plumber', 'electrician','technician'
+    // ];
 
+console.log(result.response.text().trim());
 
     // Check if the user input contains any appreciation keywords
-    const isAppreciation = appreciationKeywords.some(keyword => lowerInput.includes(keyword));
+    const isAppreciation = result.response.text().trim()  ==='0' || result.response.text().trim()  ==='1'  ?true :false
 
     if (isAppreciation) {
       const response = await client.chat.completions.create({

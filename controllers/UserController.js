@@ -117,7 +117,32 @@ const editUser = async (req, res) => {
     }
 };
 
+
+
+// Get users by CondominiumId
+const getUsersByCondominiumId = async (req, res) => {
+    const { condominiumId } = req.params; // Assuming you're passing CondominiumId as a URL parameter
+
+    try {
+        // Find users by CondominiumId
+        const users = await User.findAll({
+            where: { CondominiumId: condominiumId },
+            include: { model: Condominium, as: 'condominium' }, // Include condominium details
+            attributes: { exclude: ['CondominiumId'] } // Exclude CondominiumId from user response
+        });
+
+        if (!users.length) {
+            return res.status(404).json({ message: 'No users found for this condominium.' });
+        }
+
+        res.json(users);
+    } catch (error) {
+        console.error('Error fetching users by CondominiumId:', error);
+        res.status(500).json({ error: 'An error occurred while fetching users.' });
+    }
+};
+
 module.exports = {
     getUserByContact,
-    addUser , fetchAllUsers , editUser
+    addUser , fetchAllUsers , editUser , getUsersByCondominiumId
 };
