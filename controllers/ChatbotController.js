@@ -117,30 +117,33 @@ const createTicket = async (userId, priority, ProblemStatement, condominiumId, I
       IsPermitToAutoMail
     });
 
-    if (IsPermitToAutoMail) {
-      const approveUrl = `${process.env.FRONTEND_URL}/tickets/${ticket.id}/2`;
-      const rejectUrl = `${process.env.FRONTEND_URL}/tickets/${ticket.id}/3`;
 
+   
+
+      
+  if (IsPermitToAutoMail) {
+    const approveUrl = `${process.env.FRONTEND_URL}/tickets/${ticket.id}/2`;
+    const rejectUrl = `${process.env.FRONTEND_URL}/tickets/${ticket.id}/3`;
       const mailOptions = {
         from: process.env.GMAIL_APP_NAME,
         to: email,
-        subject: "Assistance Required: At Condominium " + user.condominium,
-        html: `
-          <p>Dear <strong>${CompanyName}</strong>,</p>
-          <p>We are facing the problem of <strong>${ProblemStatement}</strong> at condominium <strong>${user.condominium}</strong>.</p>
-          <p>Here are the user details, please contact them:</p>
-          <ul>
-            <li>Name: ${user.name}</li>
-            <li>Email: ${user.email}</li>
-            <li>Contact Number: ${user.contactNumber}</li>
-            <li>Apartment: ${user.apartment}</li>
-          </ul>
-          <p>Please approve or reject this ticket:</p>
-          <p>
-            <a href="${approveUrl}" style="padding: 10px 20px; background-color: green; color: white; text-decoration: none; border-radius: 5px;">Approve</a>
-            <a href="${rejectUrl}" style="padding: 10px 20px; background-color: red; color: white; text-decoration: none; border-radius: 5px;">Reject</a>
-          </p>
-          <p>Best regards,<br>Condominium Manager</p>
+       subject: `Richiesta assistenza At Condominium  ${user.condominium}`,
+      html: `
+        <p><strong>${CompanyName}</strong>,</p>
+        <p>Abbiamo riscontrato il seguente problema: <strong>${ProblemStatement}</strong> al condominio <strong>${user.condominium}</strong>.</p>
+        <p>Questi sono i dati del condomino, perfavore contatta:</p>
+        <ul>
+          <li>Nome: ${user.name}</li>
+          <li>Email: ${user.email}</li>
+          <li> Numero: ${user.contactNumber}</li>
+          <li>Appartamento: ${user.apartment}</li>
+        </ul>
+        <p>Per favore accetta o rifiuta questa richiesta:</p>
+        <p>
+          <a href="${approveUrl}" style="padding: 10px 20px; background-color: green; color: white; text-decoration: none; border-radius: 5px;">Approve</a>
+          <a href="${rejectUrl}" style="padding: 10px 20px; background-color: red; color: white; text-decoration: none; border-radius: 5px;">Reject</a>
+        </p>
+        <p>Grazie,<br>Condominium Manager</p>
         `,
       };
 
@@ -421,7 +424,7 @@ const simpleSupportChat = async (req, res) => {
   const prompt = `
     This is the user input: "${problemStatement}".
     Your task is to classify the input into one of the following categories:
-    - 0: Appreciation (e.g., "Thank you", "Thanks a lot", "You are great").
+    - 0: Appreciation /Best wishes (e.g., "Thank you", "Thanks a lot", "You are great","have a good day","have a nice day etc").
     - 1: Acknowledgment (e.g., "Yes, I got it", "Acknowledged").
     - 2: Problem Statement (A clear problem description, e.g., "The camera is not working", "The door is jammed").
     - 3: Vague Problem (e.g., "I have a problem", "I am facing an issue" where the actual problem isn't described).
@@ -443,12 +446,12 @@ const simpleSupportChat = async (req, res) => {
       // User appreciation message
       const appreciationPrompt = `
         This is the user's appreciation: "${problemStatement}".
-       Now identify the user's appreciation if it is "thank you", you just return with any one of the only message like  :
+       Now identify the user's appreciation if it is "thank you" etc , you just return with any one of the only message like  :
         - "Di nulla!"
         - "Prego!"
         - "Non c’è di che!"
 
-     Now identify the user's appreciation if it is  "have a nice day", you just return with any one of the only message like:
+     Now identify the user's best wishes like  if it is  "have a nice day" or "have a good day" etc, you just return with any one of the only message like:
         - "Grazie, anche a te."
         - "Grazie, altrettanto."
         - "Grazie, buona giornata anche a te.
@@ -498,7 +501,7 @@ const message = result.response.text().trim();
     } else if (responseCode === '1') {
       // Acknowledgment message
       res.status(200).json({
-        response: "Acknowledged!",
+        response: `Grazie ${username}, abbiamo avvisato il tecnico che interverrà al più presto.`,
         isProblem: false
       });
     }
@@ -507,7 +510,7 @@ const message = result.response.text().trim();
 
     // Fallback response in case of an error
     res.status(500).json({
-      message: "We apologize for the inconvenience. An error occurred while processing your request. Please try again later or contact our support team.",
+      response: "Ci scusiamo per l'inconveniente. Si è verificato un errore durante l'elaborazione della richiesta. Si prega di riprovare più tardi o di contattare il nostro team di assistenza.",
     });
   }
 };

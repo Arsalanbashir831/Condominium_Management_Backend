@@ -272,6 +272,8 @@ const createTicket = async (req, res) => {
       const approveUrl = `${process.env.FRONTEND_URL}/tickets/${ticket.id}/2`;
       const rejectUrl = `${process.env.FRONTEND_URL}/tickets/${ticket.id}/3`;
 
+
+      
       const mailOptions = {
         from: process.env.GMAIL_APP_NAME,
         to: email,
@@ -334,25 +336,26 @@ const {email , CompanyName} = await getTechnicianById (technicianId)
       const mailOptions = {
         from: process.env.GMAIL_APP_NAME,
         to: email,
-        subject: "Assistance Required: At Condominium " + user.condominium,
-        html: `
-          <p>Dear <strong>${CompanyName}</strong>,</p>
-          <p>We are facing the problem of <strong>${ProblemStatement}</strong> at condominium <strong>${user.condominium}</strong>.</p>
-          <p>Here are the user details, please contact them:</p>
-          <ul>
-            <li>Name: ${user.name}</li>
-            <li>Email: ${user.email}</li>
-            <li>Contact Number: ${user.contactNumber}</li>
-            <li>Apartment: ${user.apartment}</li>
-          </ul>
-          <p>Please approve or reject this ticket:</p>
-          <p>
-            <a href="${approveUrl}" style="padding: 10px 20px; background-color: green; color: white; text-decoration: none; border-radius: 5px;">Approve</a>
-            <a href="${rejectUrl}" style="padding: 10px 20px; background-color: red; color: white; text-decoration: none; border-radius: 5px;">Reject</a>
-          </p>
-          <p>Best regards,<br>Condominium Manager</p>
+       subject: `Richiesta assistenza At Condominium  ${user.condominium}`,
+      html: `
+        <p><strong>${CompanyName}</strong>,</p>
+        <p>Abbiamo riscontrato il seguente problema: <strong>${ProblemStatement}</strong> al condominio <strong>${user.condominium}</strong>.</p>
+        <p>Questi sono i dati del condomino, perfavore contatta:</p>
+        <ul>
+          <li>Nome: ${user.name}</li>
+          <li>Email: ${user.email}</li>
+          <li> Numero: ${user.contactNumber}</li>
+          <li>Appartamento: ${user.apartment}</li>
+        </ul>
+        <p>Per favore accetta o rifiuta questa richiesta:</p>
+        <p>
+          <a href="${approveUrl}" style="padding: 10px 20px; background-color: green; color: white; text-decoration: none; border-radius: 5px;">Approve</a>
+          <a href="${rejectUrl}" style="padding: 10px 20px; background-color: red; color: white; text-decoration: none; border-radius: 5px;">Reject</a>
+        </p>
+        <p>Grazie,<br>Condominium Manager</p>
         `,
       };
+
 
       await transporter.sendMail(mailOptions);
       console.log("Email sent to technician:", email);
@@ -456,20 +459,24 @@ const updateTicketStatus = async (req, res) => {
       const mailOptions = {
         from: process.env.GMAIL_APP_NAME,
         to: ticket.dataValues.user.dataValues.email, 
-        subject:
-          "Ticket Status Rejection By " +
-          ticket.dataValues.assigned_technicians.dataValues.CompanyName,
-        html: `
-          <p>Dear <strong>Condominium Manager </strong>,</p>
-          <p>It is stated that the Technician/Plumber just reject the user ticket of the condominium : <strong>${ticket.dataValues.user.dataValues.condominium.name}</strong>.</p>
-          <p>Here are the user details, please contact them:</p>
-          <ul>
-            <li>Name: ${ticket.dataValues.user.dataValues.name}</li>
-            <li>Email: ${ticket.dataValues.user.dataValues.email}</li>
-            <li>Contact Number: ${ticket.dataValues.user.dataValues.contactNumber}</li>
-            <li>Apartment: ${ticket.dataValues.user.dataValues.apartment}</li>
-          </ul>        
-        `,
+      subject: "Il tecnico non ha confermato la richiesta",
+          html: `
+            <p>Ciao,</p>
+            <p>Ticket ID <strong>${ticket.dataValues.id}</strong> Dopo la seconda richiesta, il tecnico non ha ancora confermato la richiesta.</p>
+            <p>Dettagli:</p>
+            <ul>
+              <li>Nome: ${ticket.dataValues.user.dataValues.name}</li>
+              <li>Email: ${ticket.dataValues.user.dataValues.email}</li>
+              <li>Numer: ${ticket.dataValues.user.dataValues.contactNumber}</li>
+              <li>Appartamento: ${ticket.dataValues.user.dataValues.apartment}</li>
+              <li>Condominio: ${ticket.dataValues.user.dataValues.condominium.dataValues.name}</li>
+              <li>Tecnico: ${ticket.dataValues.assigned_technicians.dataValues.CompanyName}</li>
+              <li>Problema: ${ticket.dataValues.ProblemStatement}</li>
+              <li>Numero di Follow-up ${ticket.dataValues.followUpCount}</li>
+            </ul>
+            <p>Grazie,<br>Condominium Manager</p>
+          `,      
+        
       };
 
       await transporter.sendMail(mailOptions).then(()=>{
@@ -590,25 +597,24 @@ console.log(technician);
       const mailOptions = {
         from: process.env.GMAIL_APP_NAME,
         to: technician.email, // Use user's email
-        subject:
-          "Follow-Up Required: Assistance Needed at Condominium " ,
-        html: `
-          <h1>Urgent Follow-Up: Action Required</h1>
-    <p>Dear ${technician.CompanyName},</p>
-    
-    <p>We hope this message finds you well. This is a follow-up regarding the pending issue at <strong>Condominium ${user.condominium.name}</strong> that requires your immediate attention.</p>
+        subject:"Urgente RIchiesta d'assistenza in sospeso ",
+      html: `
+        <h1> Urgente richiesta in sospeso</h1>
+  <p> ${technician.CompanyName},</p>
+  
+  <p> Hai una richiesta in sospeso per il seguente condominio: <strong>Condominium ${user.condominium.name}</strong></p>
 
-    <p><strong>Problem Statement:</strong> ${ticket.problemStatement}</p>
-    <p><strong>User name</strong> ${user.name}</p>
-    
-    <p>Our records indicate that the status of the request is still pending. We kindly request you to visit the site and address the issue at your earliest convenience.</p>
-    
-    <p>If you require any further information or encounter any challenges, please do not hesitate to contact us. We appreciate your prompt attention to this matter.</p>
+  <p><strong>Problema:</strong> ${ticket.problemStatement}</p>
+  <p><strong>User name</strong> ${user.name}</p>
+  
+  <p> Questa richiesta è ancora in sospeso nei nostri sistemi, ti invitiamo a visitare il condominio il prima possibile.</p>
+  
+  <p>Se hai bisogno di ulteriori informazioni e assistenza, non esitare a contattarci.</p>
 
-    <p>Thank you for your dedication and hard work in keeping the condominium in top shape.</p>
-    
-    <p>Best regards,<br>Condominium Management Team</p>
-        `,
+  <p>Grazie.</p>
+  
+  <p><br>Condominium Management Team</p>
+      `,
       };
 
       // Send the email
