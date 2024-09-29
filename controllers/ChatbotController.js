@@ -479,7 +479,7 @@ const simpleSupportChat = async (req, res) => {
         username,
         condominiumId
       });
-      const prompt=`After identifying the problem statement which is : ${problemStatement} you have choose any one of the template as response but only one not more than one:
+      const prompt=`After identifying the problem statement which is : ${problemStatement} you have choose any one of the template as response but only one not more than one and make it short dont give a detailed explaination and just give the response by choosing any one these randomly :
 "Okay ${username}, grazie per la segnalazione. Abbiamo avvisato il tecnico e arriverà il prima possibile"
 "Grazie per averci avvisato, ${username}. Abbiamo già contattato il tecnico, che arriverà al più presto."
 "Perfetto ${username}, la tua segnalazione è stata presa in carico. Il tecnico è stato avvisato e si occuperà della situazione al più presto."
