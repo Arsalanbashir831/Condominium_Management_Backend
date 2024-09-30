@@ -116,10 +116,7 @@ const createTicket = async (userId, priority, ProblemStatement, condominiumId, I
       statusId: 1,
       IsPermitToAutoMail
     });
-
-
    
-
       
   if (IsPermitToAutoMail) {
     const approveUrl = `${process.env.FRONTEND_URL}/tickets/${ticket.id}/2`;

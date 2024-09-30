@@ -456,6 +456,7 @@ const updateTicketStatus = async (req, res) => {
 
     // Check if status is 3, and send an email to admin
     if (statusId === "3") {
+  
       const mailOptions = {
         from: process.env.GMAIL_APP_NAME,
         to: ticket.dataValues.user.dataValues.email, 
@@ -474,6 +475,8 @@ const updateTicketStatus = async (req, res) => {
               <li>Problema: ${ticket.dataValues.ProblemStatement}</li>
               <li>Numero di Follow-up ${ticket.dataValues.followUpCount}</li>
             </ul>
+
+        
             <p>Grazie,<br>Condominium Manager</p>
           `,      
         
@@ -592,7 +595,7 @@ const getTicketsAndSendEmail = async (req, res) => {
 
       const user = ticket.user;
       const technician = ticket.assigned_technicians.dataValues;
-console.log(technician);
+console.log(ticket);
 
       const mailOptions = {
         from: process.env.GMAIL_APP_NAME,
@@ -604,13 +607,14 @@ console.log(technician);
   
   <p> Hai una richiesta in sospeso per il seguente condominio: <strong>Condominium ${user.condominium.name}</strong></p>
 
-  <p><strong>Problema:</strong> ${ticket.problemStatement}</p>
+  <p><strong>Problema:</strong> ${ticket.ProblemStatement}</p>
   <p><strong>User name</strong> ${user.name}</p>
   
   <p> Questa richiesta è ancora in sospeso nei nostri sistemi, ti invitiamo a visitare il condominio il prima possibile.</p>
   
   <p>Se hai bisogno di ulteriori informazioni e assistenza, non esitare a contattarci.</p>
-
+            <a href="${approveUrl}" style="padding: 10px 20px; background-color: green; color: white; text-decoration: none; border-radius: 5px;">Approve</a>
+             <a href="${rejectUrl}" style="padding: 10px 20px; background-color: red; color: white; text-decoration: none; border-radius: 5px;">Reject</a>
   <p>Grazie.</p>
   
   <p><br>Condominium Management Team</p>
@@ -654,75 +658,79 @@ const getTicketsAndNotifyAdmin = async (req, res) => {
         statusId: 1, 
         isArchieve: false, 
         IsPermitToAutoMail: true, 
-        followUpCount:1
+        followUpCount: 1
       },
       include: [
         {
           model: User,
-          as:'user',
+          as: 'user',
           attributes: ["name", "email", "contactNumber", "apartment"],
           include: [
             {
               model: Condominium,
-              as:'condominium',
+              as: 'condominium',
               attributes: ["name"],
             },
           ],
         },
         {
           model: Technician,
-          as:'assigned_technicians',
+          as: 'assigned_technicians',
           attributes: ["CompanyName"],
         },
         {
           model: Status,
-          as:'status',
+          as: 'status',
           attributes: ["id", "name"], // Assuming you're using 'name' in Status model
         },
       ],
     });
-console.log(tickets);
 
+    // If no tickets found
     if (!tickets.length) {
-      return res
-        .status(404)
-        .json({ message: "No tickets found with status pending" });
+      return res.status(404).json({ message: "No tickets found with status pending" });
     }
 
-    // Loop through tickets to check follow-up count
+    // Loop through tickets to notify admin
     for (const ticket of tickets) {
+     
+      const adminMailOptions = {
+        from: process.env.GMAIL_APP_NAME,
+        to: process.env.ADMIN_EMAIL,
+        subject: "Pending Status : Technician Did Not Reply",
+        html: `
+          <p>Dear Admin,</p>
+          <p>Ticket ID <strong>${ticket.dataValues.id}</strong> has received more than one follow-up, and the technician has not replied.</p>
+          <p>Details:</p>
+          <ul>
+            <li>User Name: ${ticket.dataValues.user.name}</li>
+            <li>Email: ${ticket.dataValues.user.email}</li>
+            <li>Contact Number: ${ticket.dataValues.user.contactNumber}</li>
+            <li>Apartment: ${ticket.dataValues.user.apartment}</li>
+            <li>Condominium: ${ticket.dataValues.user.condominium.name}</li>
+            <li>Technician: ${ticket.dataValues.assigned_technicians.CompanyName}</li>
+            <li>Problem Statement: ${ticket.dataValues.ProblemStatement}</li>
+            <li>Follow-Up Count: ${ticket.dataValues.followUpCount}</li>
+          </ul>
+          <p>Please take the necessary action.</p>
+          <p>Best regards,<br>Condominium Manager</p>
+        `,
+      };
 
-        const adminMailOptions = {
-          from: process.env.GMAIL_APP_NAME,
-          to: process.env.ADMIN_EMAIL,
-          subject: "Pending Status : Technician Did Not Reply",
-          html: `
-            <p>Dear Admin,</p>
-            <p>Ticket ID <strong>${ticket.dataValues.id}</strong> has received more than one follow-up, and the technician has not replied.</p>
-            <p>Details:</p>
-            <ul>
-              <li>User Name: ${ticket.dataValues.user.dataValues.name}</li>
-              <li>Email: ${ticket.dataValues.user.dataValues.email}</li>
-              <li>Contact Number: ${ticket.dataValues.user.dataValues.contactNumber}</li>
-              <li>Apartment: ${ticket.dataValues.user.dataValues.apartment}</li>
-              <li>Condominium: ${ticket.dataValues.user.dataValues.condominium.dataValues.name}</li>
-              <li>Technician: ${ticket.dataValues.assigned_technicians.dataValues.CompanyName}</li>
-              <li>Problem Statement: ${ticket.dataValues.ProblemStatement}</li>
-              <li>Follow-Up Count: ${ticket.dataValues.followUpCount}</li>
-            </ul>
-            <p>Please take the necessary action.</p>
-            <p>Best regards,<br>Condominium Manager</p>
-          `,
-        };
+      // Send email to admin
+      await transporter.sendMail(adminMailOptions)
+        .then(async () => {
+          console.log('Notification sent to admin');
+          // Update followUpCount to 2 after the email is sent
 
-        // Send email to admin
-        await transporter.sendMail(adminMailOptions).then(()=>{console.log('notification send to admin')});
-      }
-    
+        })
+        .catch((error) => {
+          console.error('Error sending email:', error);
+        });
+    }
 
     return res.status(200).json({
-      message:
-        "Admin notified for tickets with pending technician replies and ticket statuses updated.",
+      message: "Admin notified for tickets with pending technician replies, and ticket follow-up counts updated.",
     });
   } catch (error) {
     console.error(error);
