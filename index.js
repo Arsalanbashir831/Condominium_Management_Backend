@@ -60,7 +60,7 @@ const followUpMailToTechnicians = async () => {
 };
 
 setInterval(followUpMailToTechnicians, 6000);
-setInterval(checkTicketsAndNotifyAdmin,86400000 );
+setInterval(checkTicketsAndNotifyAdmin,300000 );
 
 
 const PORT = process.env.PORT || 8000;

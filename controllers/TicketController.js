@@ -699,22 +699,20 @@ const getTicketsAndNotifyAdmin = async (req, res) => {
         to: process.env.ADMIN_EMAIL,
         subject: "Pending Status : Technician Did Not Reply",
         html: `
-          <p>Dear Admin,</p>
-          <p>Ticket ID <strong>${ticket.dataValues.id}</strong> has received more than one follow-up, and the technician has not replied.</p>
-          <p>Details:</p>
-          <ul>
-            <li>User Name: ${ticket.dataValues.user.name}</li>
-            <li>Email: ${ticket.dataValues.user.email}</li>
-            <li>Contact Number: ${ticket.dataValues.user.contactNumber}</li>
-            <li>Apartment: ${ticket.dataValues.user.apartment}</li>
-            <li>Condominium: ${ticket.dataValues.user.condominium.name}</li>
-            <li>Technician: ${ticket.dataValues.assigned_technicians.CompanyName}</li>
-            <li>Problem Statement: ${ticket.dataValues.ProblemStatement}</li>
-            <li>Follow-Up Count: ${ticket.dataValues.followUpCount}</li>
-          </ul>
-          <p>Please take the necessary action.</p>
-          <p>Best regards,<br>Condominium Manager</p>
-        `,
+            <p>Ciao,</p>
+            <p>Ticket ID <strong>${ticket.dataValues.id}</strong> Dopo la seconda richiesta, il tecnico non ha ancora confermato la richiesta.</p>
+            <p>Dettagli:</p>
+            <ul>
+              <li>Nome: ${ticket.dataValues.user.dataValues.name}</li>
+              <li>Email: ${ticket.dataValues.user.dataValues.email}</li>
+              <li>Numer: ${ticket.dataValues.user.dataValues.contactNumber}</li>
+              <li>Appartamento: ${ticket.dataValues.user.dataValues.apartment}</li>
+              <li>Condominio: ${ticket.dataValues.user.dataValues.condominium.dataValues.name}</li>
+              <li>Tecnico: ${ticket.dataValues.assigned_technicians.dataValues.CompanyName}</li>
+              <li>Problema: ${ticket.dataValues.ProblemStatement}</li>
+              <li>Numero di Follow-up ${ticket.dataValues.followUpCount}</li>
+            </ul>
+            <p>Grazie,<br>Condominium Manager</p> `,
       };
 
       // Send email to admin
