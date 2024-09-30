@@ -349,8 +349,8 @@ const {email , CompanyName} = await getTechnicianById (technicianId)
         </ul>
         <p>Per favore accetta o rifiuta questa richiesta:</p>
         <p>
-          <a href="${approveUrl}" style="padding: 10px 20px; background-color: green; color: white; text-decoration: none; border-radius: 5px;">Approve</a>
-          <a href="${rejectUrl}" style="padding: 10px 20px; background-color: red; color: white; text-decoration: none; border-radius: 5px;">Reject</a>
+          <a href="${approveUrl}" style="padding: 10px 20px; background-color: green; color: white; text-decoration: none; border-radius: 5px;">Accetta</a>
+          <a href="${rejectUrl}" style="padding: 10px 20px; background-color: red; color: white; text-decoration: none; border-radius: 5px;">Rifiuta</a>
         </p>
         <p>Grazie,<br>Condominium Manager</p>
         `,
@@ -613,8 +613,8 @@ console.log(ticket);
   <p> Questa richiesta è ancora in sospeso nei nostri sistemi, ti invitiamo a visitare il condominio il prima possibile.</p>
   
   <p>Se hai bisogno di ulteriori informazioni e assistenza, non esitare a contattarci.</p>
-            <a href="${approveUrl}" style="padding: 10px 20px; background-color: green; color: white; text-decoration: none; border-radius: 5px;">Approve</a>
-             <a href="${rejectUrl}" style="padding: 10px 20px; background-color: red; color: white; text-decoration: none; border-radius: 5px;">Reject</a>
+            <a href="${approveUrl}" style="padding: 10px 20px; background-color: green; color: white; text-decoration: none; border-radius: 5px;">Accetta</a>
+             <a href="${rejectUrl}" style="padding: 10px 20px; background-color: red; color: white; text-decoration: none; border-radius: 5px;">Rifiuta</a>
   <p>Grazie.</p>
   
   <p><br>Condominium Management Team</p>
