@@ -471,9 +471,6 @@ const rejectionMail = async (req, res) => {
     </table>
     
     <p style="font-size: 16px; color: #555;">Se hai domande, non esitare a contattarci.</p>
-    
-    <p style="font-size: 16px; color: #555;">Ciao,</p>
-    <p style="font-size: 16px; color: #555;">Il Team del Supporto</p>
   `;
   
 
@@ -746,6 +743,9 @@ const getTicketsAndSendEmail = async (req, res) => {
             <a href="${approveUrl}" style="padding: 10px 20px; background-color: green; color: white; text-decoration: none; border-radius: 5px;">Accetta</a>
              <a href="${rejectUrl}" style="padding: 10px 20px; background-color: red; color: white; text-decoration: none; border-radius: 5px;">Rifiuta</a>
  
+             
+    <p style="font-size: 16px; color: #555;">Ciao,</p>
+    <p style="font-size: 16px; color: #555;">Il Team del Supporto</p>
       `,
       };
 
