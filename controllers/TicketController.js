@@ -359,7 +359,7 @@ const manualcreateTicket = async (req, res) => {
           <a href="${approveUrl}" style="padding: 10px 20px; background-color: green; color: white; text-decoration: none; border-radius: 5px;">Accetta</a>
           <a href="${rejectUrl}" style="padding: 10px 20px; background-color: red; color: white; text-decoration: none; border-radius: 5px;">Rifiuta</a>
         </p>
-        <p>Grazie,<br>Condominium Manager</p>
+       
         `,
       };
 
@@ -597,8 +597,6 @@ const updateTicketStatus = async (req, res) => {
               <li>Numero di Follow-up ${ticket.dataValues.followUpCount}</li>
             </ul>
 
-        
-            <p>Grazie,<br>Condominium Manager</p>
           `,
       };
 
@@ -823,7 +821,7 @@ const getTicketsAndNotifyAdmin = async (req, res) => {
       const adminMailOptions = {
         from: process.env.GMAIL_APP_NAME,
         to: process.env.ADMIN_EMAIL,
-        subject: "Pending Status : Technician Did Not Reply",
+        subject: `Ticket n.${ticket.dataValues.id} in sospeso: it tecnico non ha risposto `,
         html: `
             <p>Ciao,</p>
             <p>Ticket ID <strong>${ticket.dataValues.id}</strong> Dopo la seconda richiesta, il tecnico non ha ancora confermato la richiesta.</p>
@@ -838,7 +836,7 @@ const getTicketsAndNotifyAdmin = async (req, res) => {
               <li>Problema: ${ticket.dataValues.ProblemStatement}</li>
               <li>Numero di Follow-up ${ticket.dataValues.followUpCount}</li>
             </ul>
-            <p>Grazie,<br>Condominium Manager</p> `,
+             `,
       };
 
       // Send email to admin

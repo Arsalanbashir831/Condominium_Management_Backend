@@ -140,7 +140,7 @@ const createTicket = async (userId, priority, ProblemStatement, condominiumId, I
           <a href="${approveUrl}" style="padding: 10px 20px; background-color: green; color: white; text-decoration: none; border-radius: 5px;">Accetta</a>
           <a href="${rejectUrl}" style="padding: 10px 20px; background-color: red; color: white; text-decoration: none; border-radius: 5px;">Rifiuta</a>
         </p>
-        <p>Grazie,<br>Condominium Manager</p>
+       
         `,
       };
 
