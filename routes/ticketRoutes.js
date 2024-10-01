@@ -26,6 +26,7 @@ const authenticateJWT = require('../middleware/authMiddleware');
 router.get('/',  ticketController.getAllTickets);
 router.post('/manual', ticketController.manualcreateTicket);
 router.post('/', ticketController.createTicket);
+router.post('/rejectTicket/:ticketId', ticketController.rejectionMail);
 
 router.put('/:ticketId', ticketController.updateTicket);
 router.delete('/:id', ticketController.deleteTicket);

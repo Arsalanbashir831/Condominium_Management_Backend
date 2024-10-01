@@ -27,41 +27,38 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-
-
 const getTechnicianById = async (technicianId) => {
   if (!technicianId) {
-      console.log('technician id required')
+    console.log("technician id required");
   }
   try {
-      // Find the technician by their ID
-      const technician = await Technician.findOne({
-          where: { id: technicianId },
-          include: [
-              {
-                  model: Condominium,
-                  as: 'condominiumTech', 
-                  attributes: ['id', 'name']
-              },
-              {
-                  model: PrefCommunication,
-                  as: 'prefCommunication',
-                  attributes: ['id', 'name']
-              }
-          ]
-      });
+    // Find the technician by their ID
+    const technician = await Technician.findOne({
+      where: { id: technicianId },
+      include: [
+        {
+          model: Condominium,
+          as: "condominiumTech",
+          attributes: ["id", "name"],
+        },
+        {
+          model: PrefCommunication,
+          as: "prefCommunication",
+          attributes: ["id", "name"],
+        },
+      ],
+    });
 
-      // If no technician is found, return a 404 status with a descriptive message
-      if (!technician) {
-         console.log('No technician found')
-      }
+    // If no technician is found, return a 404 status with a descriptive message
+    if (!technician) {
+      console.log("No technician found");
+    }
 
-      // Return the technician's details
-      return {...technician.dataValues}
+    // Return the technician's details
+    return { ...technician.dataValues };
   } catch (error) {
-      console.error('Error fetching technician by technicianId:', error);
-      // Return a 500 status in case of an internal server error
-
+    console.error("Error fetching technician by technicianId:", error);
+    // Return a 500 status in case of an internal server error
   }
 };
 
@@ -191,7 +188,7 @@ const getAllTickets = async (req, res) => {
     // Build the filtering conditions
     const whereConditions = {};
     if (isArchieve !== undefined) {
-      whereConditions.isArchieve = isArchieve === 'true'; // Convert query param to boolean
+      whereConditions.isArchieve = isArchieve === "true"; // Convert query param to boolean
     }
 
     // Fetch tickets with optional filtering by 'isArchieve'
@@ -207,14 +204,14 @@ const getAllTickets = async (req, res) => {
             {
               model: Condominium,
               as: "condominium",
-              attributes: ["name","id"],
+              attributes: ["name", "id"],
             },
           ],
         },
         {
           model: Status,
           as: "status",
-          attributes: ["name","id"],
+          attributes: ["name", "id"],
         },
         {
           model: Technician,
@@ -224,7 +221,7 @@ const getAllTickets = async (req, res) => {
             {
               model: Condominium,
               as: "condominiumTech",
-              attributes: ["name","id"],
+              attributes: ["name", "id"],
             },
             {
               model: PrefCommunication,
@@ -246,15 +243,20 @@ const getAllTickets = async (req, res) => {
   }
 };
 
-
 const createTicket = async (req, res) => {
-  const { userId, priority, ProblemStatement, condominiumId, IsPermitToAutoMail } = req.body;
-  
+  const {
+    userId,
+    priority,
+    ProblemStatement,
+    condominiumId,
+    IsPermitToAutoMail,
+  } = req.body;
+
   const user = await getUserById(userId);
-    const { id, email, contactNumber, CompanyName } = await selectBestTechnician(
-      ProblemStatement,
-      condominiumId
-    );
+  const { id, email, contactNumber, CompanyName } = await selectBestTechnician(
+    ProblemStatement,
+    condominiumId
+  );
 
   try {
     // Create the ticket
@@ -264,7 +266,7 @@ const createTicket = async (req, res) => {
       ProblemStatement,
       technicianId: id, // Use the selected technician ID
       statusId: 1,
-      IsPermitToAutoMail
+      IsPermitToAutoMail,
     });
 
     // Only send email if IsPermitToAutoMail is true
@@ -272,8 +274,6 @@ const createTicket = async (req, res) => {
       const approveUrl = `${process.env.FRONTEND_URL}/tickets/${ticket.id}/2`;
       const rejectUrl = `${process.env.FRONTEND_URL}/tickets/${ticket.id}/3`;
 
-
-      
       const mailOptions = {
         from: process.env.GMAIL_APP_NAME,
         to: email,
@@ -306,16 +306,23 @@ const createTicket = async (req, res) => {
     res.status(201).json(ticket);
   } catch (error) {
     console.error("Error creating ticket or sending email:", error);
-    res.status(500).json({ message: "An error occurred while creating the ticket." });
+    res
+      .status(500)
+      .json({ message: "An error occurred while creating the ticket." });
   }
 };
 
-
 const manualcreateTicket = async (req, res) => {
-  const { userId, priority, ProblemStatement, IsPermitToAutoMail,technicianId } = req.body;
-  
+  const {
+    userId,
+    priority,
+    ProblemStatement,
+    IsPermitToAutoMail,
+    technicianId,
+  } = req.body;
+
   const user = await getUserById(userId);
-const {email , CompanyName} = await getTechnicianById (technicianId) 
+  const { email, CompanyName } = await getTechnicianById(technicianId);
 
   try {
     // Create the ticket
@@ -325,7 +332,7 @@ const {email , CompanyName} = await getTechnicianById (technicianId)
       ProblemStatement,
       technicianId, // Use the selected technician ID
       statusId: 1,
-      IsPermitToAutoMail
+      IsPermitToAutoMail,
     });
 
     // Only send email if IsPermitToAutoMail is true
@@ -336,8 +343,8 @@ const {email , CompanyName} = await getTechnicianById (technicianId)
       const mailOptions = {
         from: process.env.GMAIL_APP_NAME,
         to: email,
-       subject: `Richiesta assistenza At Condominium  ${user.condominium}`,
-      html: `
+        subject: `Richiesta assistenza At Condominium  ${user.condominium}`,
+        html: `
         <p><strong>${CompanyName}</strong>,</p>
         <p>Abbiamo riscontrato il seguente problema: <strong>${ProblemStatement}</strong> al condominio <strong>${user.condominium}</strong>.</p>
         <p>Questi sono i dati del condomino, perfavore contatta:</p>
@@ -356,7 +363,6 @@ const {email , CompanyName} = await getTechnicianById (technicianId)
         `,
       };
 
-
       await transporter.sendMail(mailOptions);
       console.log("Email sent to technician:", email);
     } else {
@@ -366,10 +372,129 @@ const {email , CompanyName} = await getTechnicianById (technicianId)
     res.status(201).json(ticket);
   } catch (error) {
     console.error("Error creating ticket or sending email:", error);
-    res.status(500).json({ message: "An error occurred while creating the ticket." });
+    res
+      .status(500)
+      .json({ message: "An error occurred while creating the ticket." });
   }
 };
 
+const rejectionMail = async (req, res) => {
+  const { ticketId } = req.params;
+
+
+  try {
+    const ticket = await Ticket.findOne({
+      where: { id: ticketId },
+      include: [
+        {
+          model: User,
+          as: "user",
+          attributes: { exclude: ["CondominiumId"] },
+          include: [
+            {
+              model: Condominium,
+              as: "condominium",
+              attributes: ["name", "id"],
+            },
+          ],
+        },
+        {
+          model: Status,
+          as: "status",
+          attributes: ["name", "id"],
+        },
+        {
+          model: Technician,
+          as: "assigned_technicians",
+          attributes: { exclude: ["PrefferedCommunication", "CondominiumId"] },
+          include: [
+            {
+              model: Condominium,
+              as: "condominiumTech",
+              attributes: ["name", "id"],
+            },
+            {
+              model: PrefCommunication,
+              as: "prefCommunication",
+              attributes: ["name"],
+            },
+          ],
+        },
+      ],
+    });
+
+    if (!ticket) {
+      return res.status(404).json({ message: "Ticket not found" });
+    }
+    // Destructure necessary details from the ticket
+
+    await ticket.update({ statusId: 3 });
+    const { priority, ProblemStatement } = ticket;
+    const user = ticket.dataValues.user.dataValues; // Access user details
+    const technician = ticket.dataValues.assigned_technicians.dataValues;
+
+    // Create mail content
+    const mailContent = `
+    <h1 style="color: #333;">Ticket ID ${ticket.dataValues.id} è stato rifiutato dal tecnico.</h1>
+    
+    <p style="font-size: 16px; color: #555;">Dettagli del ticket:</p>
+    
+    <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+      <tr>
+        <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Nome</td>
+        <td style="padding: 8px; border: 1px solid #ddd;">${user.name}</td>
+      </tr>
+      <tr>
+        <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Email</td>
+        <td style="padding: 8px; border: 1px solid #ddd;">${user.email}</td>
+      </tr>
+      <tr>
+        <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Numero</td>
+        <td style="padding: 8px; border: 1px solid #ddd;">${user.contactNumber}</td>
+      </tr>
+      <tr>
+        <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Appartamento</td>
+        <td style="padding: 8px; border: 1px solid #ddd;">${user.apartment}</td>
+      </tr>
+      <tr>
+        <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Condominio</td>
+        <td style="padding: 8px; border: 1px solid #ddd;">${user.condominium.dataValues.name}</td>
+      </tr>
+      <tr>
+        <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Tecnico</td>
+        <td style="padding: 8px; border: 1px solid #ddd;">${technician.CompanyName}</td>
+      </tr>
+      <tr>
+        <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Problema</td>
+        <td style="padding: 8px; border: 1px solid #ddd;">${ProblemStatement}</td>
+      </tr>
+    </table>
+    
+    <p style="font-size: 16px; color: #555;">Se hai domande, non esitare a contattarci.</p>
+    
+    <p style="font-size: 16px; color: #555;">Ciao,</p>
+    <p style="font-size: 16px; color: #555;">Il Team del Supporto</p>
+  `;
+  
+
+    // Set mail options
+    const mailOptions = {
+      from: process.env.ADMIN_EMAIL,
+      to: user.email, // Send to the user's email
+      subject: `Ticket n.${ticket.id} rifiutato `,
+      html: mailContent,
+    };
+
+    // Send the email
+    await transporter.sendMail(mailOptions);
+
+    // Return success response
+    res.status(200).json({ message: "Rejection email sent successfully" });
+  } catch (error) {
+    console.error("Error sending rejection email:", error);
+    res.status(500).json({ message: "Failed to send rejection email", error });
+  }
+};
 
 const updateTicket = async (req, res) => {
   const { ticketId } = req.params;
@@ -439,7 +564,7 @@ const updateTicketStatus = async (req, res) => {
     });
 
     // console.log(ticket)
-    
+
     if (!ticket) {
       return res.status(404).json({ message: "Ticket not found" });
     }
@@ -456,12 +581,11 @@ const updateTicketStatus = async (req, res) => {
 
     // Check if status is 3, and send an email to admin
     if (statusId === "3") {
-  
       const mailOptions = {
         from: process.env.GMAIL_APP_NAME,
-        to: ticket.dataValues.user.dataValues.email, 
-      subject: "Il tecnico non ha confermato la richiesta",
-          html: `
+        to: ticket.dataValues.user.dataValues.email,
+        subject: "Il tecnico non ha confermato la richiesta",
+        html: `
             <p>Ciao,</p>
             <p>Ticket ID <strong>${ticket.dataValues.id}</strong> Dopo la seconda richiesta, il tecnico non ha ancora confermato la richiesta.</p>
             <p>Dettagli:</p>
@@ -478,19 +602,22 @@ const updateTicketStatus = async (req, res) => {
 
         
             <p>Grazie,<br>Condominium Manager</p>
-          `,      
-        
+          `,
       };
 
-      await transporter.sendMail(mailOptions).then(()=>{
-        console.log('mail sended')
+      await transporter.sendMail(mailOptions).then(() => {
+        console.log("mail sended");
       });
     }
 
-    return res.status(200).json({ message: "Ticket status updated successfully", ticket });
+    return res
+      .status(200)
+      .json({ message: "Ticket status updated successfully", ticket });
   } catch (error) {
     console.error("Error updating ticket status:", error);
-    return res.status(500).json({ message: "Server error", error: error.message });
+    return res
+      .status(500)
+      .json({ message: "Server error", error: error.message });
   }
 };
 const deleteTicket = async (req, res) => {
@@ -547,16 +674,16 @@ const getTicketsAndSendEmail = async (req, res) => {
     // Fetch tickets with the necessary conditions
     const tickets = await Ticket.findAll({
       where: {
-        statusId: 1, 
-        isArchieve: false, 
-        IsPermitToAutoMail: true, 
+        statusId: 1,
+        isArchieve: false,
+        IsPermitToAutoMail: true,
         //  createdAt: { [Op.lt]: oneDayAgo } ,
-        followUpCount:0
+        followUpCount: 0,
       },
       include: [
         {
           model: User,
-          as: 'user',
+          as: "user",
           attributes: ["name", "email", "contactNumber", "apartment"],
           include: [
             {
@@ -569,7 +696,7 @@ const getTicketsAndSendEmail = async (req, res) => {
         {
           model: Technician,
           as: "assigned_technicians",
-          attributes: ["CompanyName", "SectorName","email"],
+          attributes: ["CompanyName", "SectorName", "email"],
         },
         {
           model: Status,
@@ -582,7 +709,10 @@ const getTicketsAndSendEmail = async (req, res) => {
     if (!tickets.length) {
       return res
         .status(404)
-        .json({ message: "No tickets found older than one day with status 1 and matching conditions" });
+        .json({
+          message:
+            "No tickets found older than one day with status 1 and matching conditions",
+        });
     }
 
     const emailPromises = tickets.map(async (ticket) => {
@@ -595,13 +725,13 @@ const getTicketsAndSendEmail = async (req, res) => {
 
       const user = ticket.user;
       const technician = ticket.assigned_technicians.dataValues;
-console.log(ticket);
+      console.log(ticket);
 
       const mailOptions = {
         from: process.env.GMAIL_APP_NAME,
         to: technician.email, // Use user's email
-        subject:"Urgente RIchiesta d'assistenza in sospeso ",
-      html: `
+        subject: `Ticket n.${ticket.id} in sospeso: it tecnico non ha risposto  `,
+        html: `
         <h1> Urgente richiesta in sospeso</h1>
   <p> ${technician.CompanyName},</p>
   
@@ -615,15 +745,12 @@ console.log(ticket);
   <p>Se hai bisogno di ulteriori informazioni e assistenza, non esitare a contattarci.</p>
             <a href="${approveUrl}" style="padding: 10px 20px; background-color: green; color: white; text-decoration: none; border-radius: 5px;">Accetta</a>
              <a href="${rejectUrl}" style="padding: 10px 20px; background-color: red; color: white; text-decoration: none; border-radius: 5px;">Rifiuta</a>
-  <p>Grazie.</p>
-  
-  <p><br>Condominium Management Team</p>
+ 
       `,
       };
 
       // Send the email
-      await transporter.sendMail(mailOptions)
-   
+      await transporter.sendMail(mailOptions);
     });
 
     await Promise.all(emailPromises);
@@ -648,39 +775,37 @@ console.log(ticket);
   }
 };
 
-
-
 const getTicketsAndNotifyAdmin = async (req, res) => {
   try {
     // Find all tickets with statusId = 1 (assuming '1' corresponds to 'pending')
     const tickets = await Ticket.findAll({
       where: {
-        statusId: 1, 
-        isArchieve: false, 
-        IsPermitToAutoMail: true, 
-        followUpCount: 1
+        statusId: 1,
+        isArchieve: false,
+        IsPermitToAutoMail: true,
+        followUpCount: 1,
       },
       include: [
         {
           model: User,
-          as: 'user',
+          as: "user",
           attributes: ["name", "email", "contactNumber", "apartment"],
           include: [
             {
               model: Condominium,
-              as: 'condominium',
+              as: "condominium",
               attributes: ["name"],
             },
           ],
         },
         {
           model: Technician,
-          as: 'assigned_technicians',
+          as: "assigned_technicians",
           attributes: ["CompanyName"],
         },
         {
           model: Status,
-          as: 'status',
+          as: "status",
           attributes: ["id", "name"], // Assuming you're using 'name' in Status model
         },
       ],
@@ -688,12 +813,13 @@ const getTicketsAndNotifyAdmin = async (req, res) => {
 
     // If no tickets found
     if (!tickets.length) {
-      return res.status(404).json({ message: "No tickets found with status pending" });
+      return res
+        .status(404)
+        .json({ message: "No tickets found with status pending" });
     }
 
     // Loop through tickets to notify admin
     for (const ticket of tickets) {
-     
       const adminMailOptions = {
         from: process.env.GMAIL_APP_NAME,
         to: process.env.ADMIN_EMAIL,
@@ -716,26 +842,28 @@ const getTicketsAndNotifyAdmin = async (req, res) => {
       };
 
       // Send email to admin
-      await transporter.sendMail(adminMailOptions)
+      await transporter
+        .sendMail(adminMailOptions)
         .then(async () => {
-          console.log('Notification sent to admin');
+          console.log("Notification sent to admin");
           // Update followUpCount to 2 after the email is sent
-
         })
         .catch((error) => {
-          console.error('Error sending email:', error);
+          console.error("Error sending email:", error);
         });
     }
 
     return res.status(200).json({
-      message: "Admin notified for tickets with pending technician replies, and ticket follow-up counts updated.",
+      message:
+        "Admin notified for tickets with pending technician replies, and ticket follow-up counts updated.",
     });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ message: "Internal Server Error", error: error.message });
+    return res
+      .status(500)
+      .json({ message: "Internal Server Error", error: error.message });
   }
 };
-
 
 module.exports = {
   getAllTickets,
@@ -746,5 +874,6 @@ module.exports = {
   updateTicketStatus,
   getTicketsAndSendEmail,
   getTicketsAndNotifyAdmin,
-  manualcreateTicket
+  manualcreateTicket,
+  rejectionMail,
 };

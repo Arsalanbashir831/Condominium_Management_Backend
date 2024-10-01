@@ -19,9 +19,9 @@ const Status = sequelize.define('Status', {
 Status.ensureDefaults = async () => {
  
     const defaults = [
-      { id: 1, name: 'pending' },
-      { id: 2, name: 'accepted' },
-      { id: 3, name: 'rejected' },
+      { id: 1, name: 'sospeso' },
+      { id: 2, name: 'accettato' },
+      { id: 3, name: 'rifiutato' },
     ];
   
     for (const status of defaults) {
