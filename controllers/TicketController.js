@@ -343,7 +343,7 @@ const manualcreateTicket = async (req, res) => {
       const mailOptions = {
         from: process.env.GMAIL_APP_NAME,
         to: email,
-        subject: `Richiesta assistenza At Condominium  ${user.condominium}`,
+        subject: `  Richiesta di intervento al condominio ${user.condominium}  `,
         html: `
         <p><strong>${CompanyName}</strong>,</p>
         <p>Abbiamo riscontrato il seguente problema: <strong>${ProblemStatement}</strong> al condominio <strong>${user.condominium}</strong>.</p>

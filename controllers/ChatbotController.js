@@ -73,16 +73,19 @@ const selectBestTechnician = async (problemStatement, condominiumId) => {
     console.log("Raw AI response:", responseText); // Log the raw response
     responseText = responseText.replace(/```json|```/g, "").trim(); // Remove the backticks
     const technicianResponse = JSON.parse(responseText);
+  
+    console.log('technicianResponse',technicianResponse);
+    
     return {
       id: technicianResponse.id,
       email: technicianResponse.email,
       contactNumber: technicianResponse.ContactNumber || "Not provided",
-      CompanyName: technicianData[0].CompanyName || "Not provided",
+      CompanyName: technicianResponse.CompanyName || "Not provided",
     };
   } catch (error) {
     console.error("Error selecting best technician:", error);
 
-    if (technicianData.length > 0) {
+    if (technicianData.length > 0) {      
       return {
         id: technicianData[0].id,
         email: technicianData[0].email,
@@ -105,6 +108,7 @@ const createTicket = async (userId, priority, ProblemStatement, condominiumId, I
       ProblemStatement,
       condominiumId
     );
+console.log("Ticket create",{ id, email, contactNumber, CompanyName });
 
   try {
     // Create the ticket
@@ -124,7 +128,7 @@ const createTicket = async (userId, priority, ProblemStatement, condominiumId, I
       const mailOptions = {
         from: process.env.GMAIL_APP_NAME,
         to: email,
-       subject: `Richiesta di assistente al Condominio: ${user.condominium}  `,
+       subject: `  Richiesta di intervento al condominio ${user.condominium}  `,
       html: `
         <p><strong>${CompanyName}</strong>,</p>
         <p>Abbiamo riscontrato il seguente problema: <strong>${ProblemStatement}</strong> al condominio <strong>${user.condominium}</strong>.</p>
