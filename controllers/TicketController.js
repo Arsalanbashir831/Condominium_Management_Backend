@@ -470,7 +470,7 @@ const rejectionMail = async (req, res) => {
       </tr>
     </table>
     
-    <p style="font-size: 16px; color: #555;">Se hai domande, non esitare a contattarci.</p>
+   
   `;
   
 
@@ -725,7 +725,7 @@ const getTicketsAndSendEmail = async (req, res) => {
       const mailOptions = {
         from: process.env.GMAIL_APP_NAME,
         to: technician.email, // Use user's email
-        subject: `Ticket n.${ticket.id} in sospeso: it tecnico non ha risposto  `,
+        subject: `Ticket n.${ticket.id} in sospeso  `,
         html: `
         <h1> Urgente richiesta in sospeso</h1>
   <p> ${technician.CompanyName},</p>
@@ -734,16 +734,14 @@ const getTicketsAndSendEmail = async (req, res) => {
 
   <p><strong>Problema:</strong> ${ticket.ProblemStatement}</p>
   <p><strong>User name</strong> ${user.name}</p>
+  <p><strong>User Telefono</strong> ${user.contactNumber}</p>
   
-  <p> Questa richiesta è ancora in sospeso nei nostri sistemi, ti invitiamo a visitare il condominio il prima possibile.</p>
+  <p> Accetta o rifiuta la richiesta il prima possibile, grazie.</p>
   
-  <p>Se hai bisogno di ulteriori informazioni e assistenza, non esitare a contattarci.</p>
             <a href="${approveUrl}" style="padding: 10px 20px; background-color: green; color: white; text-decoration: none; border-radius: 5px;">Accetta</a>
              <a href="${rejectUrl}" style="padding: 10px 20px; background-color: red; color: white; text-decoration: none; border-radius: 5px;">Rifiuta</a>
  
-             
-    <p style="font-size: 16px; color: #555;">Ciao,</p>
-    <p style="font-size: 16px; color: #555;">Il Team del Supporto</p>
+
       `,
       };
 
@@ -821,7 +819,7 @@ const getTicketsAndNotifyAdmin = async (req, res) => {
       const adminMailOptions = {
         from: process.env.GMAIL_APP_NAME,
         to: process.env.ADMIN_EMAIL,
-        subject: `Ticket n.${ticket.dataValues.id} in sospeso: it tecnico non ha risposto `,
+        subject: `Ticket ID ${ticket.dataValues.id}: Dopo la seconda richiesta il tecnico non ha ancora risposto.`,
         html: `
             <p>Ciao,</p>
             <p>Ticket ID <strong>${ticket.dataValues.id}</strong> Dopo la seconda richiesta, il tecnico non ha ancora confermato la richiesta.</p>
@@ -834,7 +832,7 @@ const getTicketsAndNotifyAdmin = async (req, res) => {
               <li>Condominio: ${ticket.dataValues.user.dataValues.condominium.dataValues.name}</li>
               <li>Tecnico: ${ticket.dataValues.assigned_technicians.dataValues.CompanyName}</li>
               <li>Problema: ${ticket.dataValues.ProblemStatement}</li>
-              <li>Numero di Follow-up ${ticket.dataValues.followUpCount}</li>
+            
             </ul>
              `,
       };
