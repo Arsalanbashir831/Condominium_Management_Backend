@@ -60,13 +60,14 @@ const followUpMailToTechnicians = async () => {
 };
 
 setInterval(followUpMailToTechnicians, 6000);
-setInterval(checkTicketsAndNotifyAdmin,300000 );
+setInterval(checkTicketsAndNotifyAdmin,6000 );
 
 
 const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => {
   console.log("ADMIN EMAIL",process.env.ADMIN_EMAIL);
   console.log("GMAIL",process.env.GMAIL_APP_NAME);
+
   
   console.log(`Server is running on port ${PORT}`);
 });

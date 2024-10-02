@@ -577,24 +577,48 @@ const updateTicketStatus = async (req, res) => {
     await ticket.save();
 
     if (statusId === "3") {
+      const user = ticket.dataValues.user.dataValues;
+      const technician = ticket.dataValues.assigned_technicians.dataValues;
       const mailOptions = {
         from: process.env.GMAIL_APP_NAME,
         to: ticket.dataValues.user.dataValues.email,
-        subject: "Il tecnico non ha confermato la richiesta",
+        subject: `Ticket n.${ticket.dataValues.id} rifiutato`,
         html: `
-            <p>Ciao,</p>
-            <p>Ticket ID ${ticket.dataValues.id} Dopo la seconda richiesta il tecnico non ha ancora risposto</p>
-            <p>Dettagli:</p>
-            <ul>
-              <li>Nome: ${ticket.dataValues.user.dataValues.name}</li>
-              <li>Email: ${ticket.dataValues.user.dataValues.email}</li>
-              <li>Numer: ${ticket.dataValues.user.dataValues.contactNumber}</li>
-              <li>Appartamento: ${ticket.dataValues.user.dataValues.apartment}</li>
-              <li>Condominio: ${ticket.dataValues.user.dataValues.condominium.dataValues.name}</li>
-              <li>Tecnico: ${ticket.dataValues.assigned_technicians.dataValues.CompanyName}</li>
-              <li>Problema: ${ticket.dataValues.ProblemStatement}</li>
-             
-            </ul>
+
+        <h1 style="color: #333;">Ticket ID ${ticket.dataValues.id} è stato rifiutato dal tecnico.</h1>
+    
+    <p style="font-size: 16px; color: #555;">Dettagli del ticket:</p>
+    
+    <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+      <tr>
+        <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Nome</td>
+        <td style="padding: 8px; border: 1px solid #ddd;">${user.name}</td>
+      </tr>
+      <tr>
+        <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Email</td>
+        <td style="padding: 8px; border: 1px solid #ddd;">${user.email}</td>
+      </tr>
+      <tr>
+        <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Numero</td>
+        <td style="padding: 8px; border: 1px solid #ddd;">${user.contactNumber}</td>
+      </tr>
+      <tr>
+        <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Appartamento</td>
+        <td style="padding: 8px; border: 1px solid #ddd;">${user.apartment}</td>
+      </tr>
+      <tr>
+        <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Condominio</td>
+        <td style="padding: 8px; border: 1px solid #ddd;">${user.condominium.dataValues.name}</td>
+      </tr>
+      <tr>
+        <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Tecnico</td>
+        <td style="padding: 8px; border: 1px solid #ddd;">${technician.CompanyName}</td>
+      </tr>
+      <tr>
+        <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Problema</td>
+        <td style="padding: 8px; border: 1px solid #ddd;">${ticket.dataValues.ProblemStatement}</td>
+      </tr>
+    </table>
 
           `,
       };
@@ -662,8 +686,8 @@ const assignTechnicianToTicket = async (req, res) => {
 const getTicketsAndSendEmail = async (req, res) => {
   try {
     // Calculate the date for tickets older than one day
-    const oneDayAgo = new Date();
-    oneDayAgo.setDate(oneDayAgo.getSeconds() - 6); // Subtract one day
+    // const oneDayAgo = new Date();
+    // oneDayAgo.setDate(oneDayAgo.getSeconds() - 6); // Subtract one day
 
     // Fetch tickets with the necessary conditions
     const tickets = await Ticket.findAll({
@@ -671,8 +695,8 @@ const getTicketsAndSendEmail = async (req, res) => {
         statusId: 1,
         isArchieve: false,
         IsPermitToAutoMail: true,
-        //  createdAt: { [Op.lt]: oneDayAgo } ,
-        followUpCount: 0,
+         createdAt: {  [Op.lt]: new Date(new Date() - 5 * 60 * 1000) } ,
+         followUpCount: 0,
       },
       include: [
         {
@@ -708,6 +732,7 @@ const getTicketsAndSendEmail = async (req, res) => {
             "No tickets found older than one day with status 1 and matching conditions",
         });
     }
+console.log(tickets);
 
     const emailPromises = tickets.map(async (ticket) => {
       const approveUrl = `${process.env.FRONTEND_URL}/tickets/${ticket.id}/2`;
@@ -715,11 +740,12 @@ const getTicketsAndSendEmail = async (req, res) => {
 
       // Increment follow-up count
       ticket.followUpCount += 1;
-      await ticket.save(); // Save the ticket with updated follow-up count
+      ticket.createdAt = new Date();
+      await ticket.save(); 
 
       const user = ticket.user;
       const technician = ticket.assigned_technicians.dataValues;
-      console.log(ticket);
+   
 
       const mailOptions = {
         from: process.env.GMAIL_APP_NAME,
@@ -779,7 +805,11 @@ const getTicketsAndNotifyAdmin = async (req, res) => {
         isArchieve: false,
         IsPermitToAutoMail: true,
         followUpCount: 1,
+        createdAt: {
+          [Op.lt]: new Date(new Date() - 5 * 60 * 1000) // Older than 5 minutes
+        }
       },
+  
       include: [
         {
           model: User,
@@ -812,9 +842,11 @@ const getTicketsAndNotifyAdmin = async (req, res) => {
         .status(404)
         .json({ message: "No tickets found with status pending" });
     }
+console.log(tickets);
 
     // Loop through tickets to notify admin
     for (const ticket of tickets) {
+      await ticket.update({ followUpCount: 2 });
       const adminMailOptions = {
         from: process.env.GMAIL_APP_NAME,
         to: process.env.ADMIN_EMAIL,
