@@ -576,7 +576,6 @@ const updateTicketStatus = async (req, res) => {
     ticket.statusId = statusId;
     await ticket.save();
 
-    // Check if status is 3, and send an email to admin
     if (statusId === "3") {
       const mailOptions = {
         from: process.env.GMAIL_APP_NAME,
@@ -584,7 +583,7 @@ const updateTicketStatus = async (req, res) => {
         subject: "Il tecnico non ha confermato la richiesta",
         html: `
             <p>Ciao,</p>
-            <p>Ticket ID <strong>${ticket.dataValues.id}</strong> Dopo la seconda richiesta, il tecnico non ha ancora confermato la richiesta.</p>
+            <p>Ticket ID ${ticket.dataValues.id} Dopo la seconda richiesta il tecnico non ha ancora risposto</p>
             <p>Dettagli:</p>
             <ul>
               <li>Nome: ${ticket.dataValues.user.dataValues.name}</li>
@@ -594,7 +593,7 @@ const updateTicketStatus = async (req, res) => {
               <li>Condominio: ${ticket.dataValues.user.dataValues.condominium.dataValues.name}</li>
               <li>Tecnico: ${ticket.dataValues.assigned_technicians.dataValues.CompanyName}</li>
               <li>Problema: ${ticket.dataValues.ProblemStatement}</li>
-              <li>Numero di Follow-up ${ticket.dataValues.followUpCount}</li>
+             
             </ul>
 
           `,
