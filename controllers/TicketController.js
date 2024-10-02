@@ -477,7 +477,7 @@ const rejectionMail = async (req, res) => {
     // Set mail options
     const mailOptions = {
       from: process.env.ADMIN_EMAIL,
-      to: user.email, // Send to the user's email
+      to: process.env.ADMIN_EMAIL, // Send to the user's email
       subject: `Ticket n.${ticket.id} rifiutato `,
       html: mailContent,
     };
